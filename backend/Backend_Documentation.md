@@ -8,6 +8,7 @@
 5. [API Endpoints](#api-endpoints)
 6. [Работа с файлами](#работа-с-файлами)
 7. [Установка и настройка](#установка-и-настройка)
+8. [Примеры использования API](#примеры-использования-api)
 
 ## Обзор
 
@@ -276,4 +277,753 @@ python manage.py runserver
 1. Создать проект в Supabase
 2. Получить URL и API ключ
 3. Настроить переменную DATABASE_URL в файле .env
-4. Настроить CORS в Supabase для доступа с вашего домена 
+4. Настроить CORS в Supabase для доступа с вашего домена
+
+## Примеры использования API
+
+В этом разделе приведены конкретные примеры запросов и ответов API для облегчения разработки фронтенда. 
+
+### Аутентификация
+
+#### Получение JWT токена
+
+**Запрос:**
+```http
+POST /api/token/
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+**Ответ:**
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Обновление JWT токена
+
+**Запрос:**
+```http
+POST /api/token/refresh/
+Content-Type: application/json
+
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Ответ:**
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Получение данных текущего пользователя
+
+**Запрос:**
+```http
+GET /api/auth/users/me/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "id": 1,
+  "username": "admin",
+  "email": "admin@example.com",
+  "groups": ["admin"]
+}
+```
+
+### Компании
+
+#### Получение списка компаний
+
+**Запрос:**
+```http
+GET /api/companies/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "name": "Логистик Групп",
+      "address": "г. Москва, ул. Ленина, 10",
+      "phone": "+7 (495) 123-45-67",
+      "email": "info@logistic-group.ru",
+      "created_at": "2023-05-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "ТрансКарго",
+      "address": "г. Санкт-Петербург, ул. Невская, 5",
+      "phone": "+7 (812) 765-43-21",
+      "email": "info@transcargo.ru",
+      "created_at": "2023-05-02T11:00:00Z"
+    }
+  ]
+}
+```
+
+#### Создание компании
+
+**Запрос:**
+```http
+POST /api/companies/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "name": "Новая компания",
+  "address": "г. Казань, ул. Кремлевская, 1",
+  "phone": "+7 (843) 123-45-67",
+  "email": "info@newcompany.ru"
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 3,
+  "name": "Новая компания",
+  "address": "г. Казань, ул. Кремлевская, 1",
+  "phone": "+7 (843) 123-45-67",
+  "email": "info@newcompany.ru",
+  "created_at": "2023-05-10T14:30:00Z"
+}
+```
+
+### Пользователи
+
+#### Получение списка пользователей
+
+**Запрос:**
+```http
+GET /api/userprofiles/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "user": 1,
+      "company": 1,
+      "phone": "+7 (999) 123-45-67",
+      "name": "Иванов Иван",
+      "comment": "Руководитель",
+      "user_group": "boss",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "user": 2,
+      "company": 1,
+      "phone": "+7 (999) 234-56-78",
+      "name": "Петров Петр",
+      "comment": "Менеджер по продажам",
+      "user_group": "manager",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "user": 3,
+      "company": 2,
+      "phone": "+7 (999) 345-67-89",
+      "name": "Сидоров Сидор",
+      "comment": "Клиент",
+      "user_group": "client",
+      "is_active": true
+    }
+  ]
+}
+```
+
+#### Создание пользователя
+
+**Запрос:**
+```http
+POST /api/userprofiles/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "user": {
+    "username": "new_user",
+    "password": "secure_password",
+    "email": "new_user@example.com"
+  },
+  "company": 1,
+  "phone": "+7 (999) 987-65-43",
+  "name": "Новый Пользователь",
+  "comment": "Работник склада",
+  "user_group": "warehouse"
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 4,
+  "user": 4,
+  "company": 1,
+  "phone": "+7 (999) 987-65-43",
+  "name": "Новый Пользователь",
+  "comment": "Работник склада",
+  "user_group": "warehouse",
+  "is_active": true
+}
+```
+
+### Отправки
+
+#### Получение списка отправок
+
+**Запрос:**
+```http
+GET /api/shipments/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "number": "SHP-001",
+      "company": 1,
+      "status": "at_warehouse",
+      "comment": "Формируется на складе в Москве",
+      "created_at": "2023-05-05T09:30:00Z",
+      "created_by": 1,
+      "files": [
+        {
+          "id": 1,
+          "file": "/media/logistic/shipments/1/document.pdf",
+          "name": "Документы по отправке",
+          "folder": null,
+          "uploaded_at": "2023-05-05T10:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "number": "SHP-002",
+      "company": 1,
+      "status": "departed",
+      "comment": "Выехал со склада 10.05.2023",
+      "created_at": "2023-05-10T08:00:00Z",
+      "created_by": 1,
+      "files": []
+    }
+  ]
+}
+```
+
+#### Создание отправки
+
+**Запрос:**
+```http
+POST /api/shipments/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "number": "SHP-003",
+  "status": "at_warehouse",
+  "comment": "Новая отправка"
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 3,
+  "number": "SHP-003",
+  "company": 1,
+  "status": "at_warehouse",
+  "comment": "Новая отправка",
+  "created_at": "2023-05-15T14:00:00Z",
+  "created_by": 1,
+  "files": []
+}
+```
+
+#### Загрузка файлов для отправки
+
+**Запрос:**
+```http
+POST /api/shipments/3/upload-files/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: multipart/form-data
+
+files: [file1.pdf, file2.pdf]
+folder: "Документы"
+```
+
+**Ответ:**
+```json
+{
+  "message": "Файлы успешно загружены",
+  "files": [
+    {
+      "id": 2,
+      "file": "/media/logistic/shipments/3/Документы/file1.pdf",
+      "name": "file1.pdf",
+      "folder": "Документы",
+      "uploaded_at": "2023-05-15T14:15:00Z"
+    },
+    {
+      "id": 3,
+      "file": "/media/logistic/shipments/3/Документы/file2.pdf",
+      "name": "file2.pdf",
+      "folder": "Документы",
+      "uploaded_at": "2023-05-15T14:15:00Z"
+    }
+  ]
+}
+```
+
+### Заявки
+
+#### Получение списка заявок
+
+**Запрос:**
+```http
+GET /api/requests/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "number": "REQ-001",
+      "company": 1,
+      "description": "Перевозка оборудования",
+      "warehouse_number": "WH-001",
+      "col_mest": 5,
+      "declared_weight": 500.0,
+      "declared_volume": 2.5,
+      "actual_weight": 510.0,
+      "actual_volume": 2.6,
+      "rate": {
+        "base": 10000,
+        "additional": 2000
+      },
+      "comment": "Хрупкий груз",
+      "status": "on_warehouse",
+      "client": 3,
+      "manager": 2,
+      "shipment": 1,
+      "created_at": "2023-05-06T11:00:00Z",
+      "files": [
+        {
+          "id": 1,
+          "file": "/media/logistic/requests/1/invoice.pdf",
+          "name": "Счет",
+          "uploaded_at": "2023-05-06T11:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "number": "REQ-002",
+      "company": 1,
+      "description": "Доставка мебели",
+      "warehouse_number": "WH-002",
+      "col_mest": 3,
+      "declared_weight": 300.0,
+      "declared_volume": 1.8,
+      "actual_weight": 320.0,
+      "actual_volume": 1.9,
+      "rate": {
+        "base": 8000,
+        "additional": 1500
+      },
+      "comment": "Требуется аккуратная разгрузка",
+      "status": "new",
+      "client": 3,
+      "manager": null,
+      "shipment": null,
+      "created_at": "2023-05-12T10:30:00Z",
+      "files": []
+    }
+  ]
+}
+```
+
+#### Создание заявки
+
+**Запрос:**
+```http
+POST /api/requests/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "description": "Перевозка бытовой техники",
+  "col_mest": 2,
+  "declared_weight": 200.0,
+  "declared_volume": 1.0,
+  "comment": "Два холодильника",
+  "status": "new",
+  "client": 3
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 3,
+  "number": "REQ-003",
+  "company": 1,
+  "description": "Перевозка бытовой техники",
+  "warehouse_number": null,
+  "col_mest": 2,
+  "declared_weight": 200.0,
+  "declared_volume": 1.0,
+  "actual_weight": null,
+  "actual_volume": null,
+  "rate": null,
+  "comment": "Два холодильника",
+  "status": "new",
+  "client": 3,
+  "manager": null,
+  "shipment": null,
+  "created_at": "2023-05-20T09:15:00Z",
+  "files": []
+}
+```
+
+#### Загрузка файлов для заявки
+
+**Запрос:**
+```http
+POST /api/requests/3/upload-files/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: multipart/form-data
+
+files: [invoice.pdf, packing_list.pdf]
+```
+
+**Ответ:**
+```json
+{
+  "message": "Файлы успешно загружены",
+  "files": [
+    {
+      "id": 2,
+      "file": "/media/logistic/requests/3/invoice.pdf",
+      "name": "invoice.pdf",
+      "uploaded_at": "2023-05-20T09:30:00Z"
+    },
+    {
+      "id": 3,
+      "file": "/media/logistic/requests/3/packing_list.pdf",
+      "name": "packing_list.pdf",
+      "uploaded_at": "2023-05-20T09:30:00Z"
+    }
+  ]
+}
+```
+
+#### Получение файлов заявки
+
+**Запрос:**
+```http
+GET /api/requests/3/files/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+[
+  {
+    "id": 2,
+    "file": "/media/logistic/requests/3/invoice.pdf",
+    "name": "invoice.pdf",
+    "uploaded_at": "2023-05-20T09:30:00Z"
+  },
+  {
+    "id": 3,
+    "file": "/media/logistic/requests/3/packing_list.pdf",
+    "name": "packing_list.pdf",
+    "uploaded_at": "2023-05-20T09:30:00Z"
+  }
+]
+```
+
+#### Скачивание файла заявки
+
+**Запрос:**
+```http
+GET /api/requests/3/download-file/2/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+Файл возвращается в формате binary с соответствующими заголовками:
+```
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="invoice.pdf"
+```
+
+#### Удаление файла заявки
+
+**Запрос:**
+```http
+DELETE /api/requests/3/files/2/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "message": "Файл успешно удален"
+}
+```
+
+### Финансы
+
+#### Получение списка финансовых операций
+
+**Запрос:**
+```http
+GET /api/finance/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "number": "FIN-001",
+      "company": 1,
+      "operation_type": "incoming",
+      "payment_date": "2023-05-15",
+      "document_type": "invoice",
+      "currency": "rub",
+      "counterparty": "ООО Клиент",
+      "article": 1,
+      "amount": 10000.0,
+      "shipment": 1,
+      "request": 1,
+      "basis": null,
+      "is_paid": false,
+      "created_by": 1,
+      "created_at": "2023-05-10T15:00:00Z"
+    },
+    {
+      "id": 2,
+      "number": "FIN-002",
+      "company": 1,
+      "operation_type": "outgoing",
+      "payment_date": "2023-05-18",
+      "document_type": "payment",
+      "currency": "rub",
+      "counterparty": "ООО Перевозчик",
+      "article": 2,
+      "amount": 5000.0,
+      "shipment": 1,
+      "request": null,
+      "basis": null,
+      "is_paid": true,
+      "created_by": 1,
+      "created_at": "2023-05-18T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### Получение баланса
+
+**Запрос:**
+```http
+GET /api/finance/balance/?currency=rub
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "balance": {
+    "rub": 5000.0
+  }
+}
+```
+
+### Расчеты отправок
+
+#### Получение расчета по ID отправки
+
+**Запрос:**
+```http
+GET /api/shipment-calculations/by-shipment/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "id": 1,
+  "shipment": 1,
+  "company": 1,
+  "total_weight": 510.0,
+  "total_volume": 2.6,
+  "total_cost": 12000.0,
+  "expenses": [
+    {
+      "id": 1,
+      "article": 2,
+      "amount": 5000.0,
+      "currency": "rub",
+      "description": "Оплата перевозчику",
+      "created_at": "2023-05-18T10:00:00Z"
+    }
+  ],
+  "created_at": "2023-05-10T15:30:00Z",
+  "updated_at": "2023-05-18T10:15:00Z"
+}
+```
+
+#### Расчет затрат
+
+**Запрос:**
+```http
+POST /api/shipment-calculations/1/calculate-costs/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "weight_cost": 100,
+  "volume_cost": 1000,
+  "additional_costs": 2000
+}
+```
+
+**Ответ:**
+```json
+{
+  "weight_cost_total": 51000.0,
+  "volume_cost_total": 2600.0,
+  "additional_costs": 2000.0,
+  "total_cost": 55600.0
+}
+```
+
+### Статьи расходов/доходов
+
+#### Получение списка статей
+
+**Запрос:**
+```http
+GET /api/articles/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Оплата от клиента",
+    "type": "income",
+    "company": 1,
+    "created_at": "2023-05-01T12:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Оплата перевозчику",
+    "type": "expense",
+    "company": 1,
+    "created_at": "2023-05-01T12:30:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Таможенные сборы",
+    "type": "expense",
+    "company": 1,
+    "created_at": "2023-05-01T13:00:00Z"
+  }
+]
+```
+
+### Аналитика
+
+#### Получение сводной аналитики
+
+**Запрос:**
+```http
+GET /api/analytics/summary/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "shipments": {
+    "total": 2,
+    "by_status": {
+      "at_warehouse": 1,
+      "departed": 1
+    }
+  },
+  "requests": {
+    "total": 3,
+    "by_status": {
+      "new": 2,
+      "on_warehouse": 1
+    }
+  },
+  "finances": {
+    "income": {
+      "rub": 10000.0
+    },
+    "expense": {
+      "rub": 5000.0
+    },
+    "balance": {
+      "rub": 5000.0
+    }
+  },
+  "period": {
+    "start": "2023-05-01",
+    "end": "2023-05-31"
+  }
+}
+``` 
