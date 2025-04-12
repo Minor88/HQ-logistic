@@ -1016,8 +1016,8 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         # Запрещаем изменение поля shipment при обновлении
         if 'shipment' in request.data:
-            return Response({"error": "Cannot change shipment for existing calculation"}, 
-                           status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Cannot change shipment for existing calculation"},
+                          status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='expenses')
