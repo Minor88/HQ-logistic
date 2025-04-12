@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, generics
 from .models import UserProfile, Shipment, Request, RequestFile, ShipmentFile, ShipmentFolder, Article, Finance, ShipmentCalculation, Company, ShipmentStatus, RequestStatus
 from .serializers import UserProfileSerializer, ShipmentListSerializer, ShipmentDetailSerializer, RequestListSerializer, RequestDetailSerializer, RequestFileSerializer, ShipmentFileSerializer, ShipmentFolderSerializer, ArticleSerializer, FinanceListSerializer, FinanceDetailSerializer, ShipmentCalculationSerializer, CompanySerializer, ShipmentStatusSerializer, RequestStatusSerializer, AnalyticsSummarySerializer, BalanceSerializer, CounterpartyBalanceSerializer, EmailSerializer
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, renderer_classes, schema
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 import os
@@ -31,6 +31,8 @@ import datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from rest_framework.renderers import JSONRenderer
+from rest_framework.schemas import AutoSchema
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -375,15 +377,32 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         serializer = ShipmentFileSerializer(created_files, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['get'], url_path='download-file')
-    def shipment_download_file(self, request, pk=None):
+    @action(detail=True, methods=['get'], url_path='download-all-files', url_name='download_all_files')
+    def download_all_files(self, request, pk=None):
         """
-        Скачивает файл отправки.
+        Скачивает все файлы отправки.
         
-        Возвращает файл как вложение для скачивания.
+        Возвращает все файлы отправки как вложения для скачивания.
         """
         try:
-            file_instance = ShipmentFile.objects.get(id=pk)
+            shipment_instance = self.get_object()
+            files = ShipmentFile.objects.filter(shipment=shipment_instance)
+            response = FileResponse(shipment_instance.get_files_zip(), as_attachment=True)
+            response['Content-Disposition'] = f'attachment; filename="{shipment_instance.name}_files.zip"'
+            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+            return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'], url_path=r'download-file/(?P<file_id>\d+)', url_name='download_single_file')
+    def download_single_file(self, request, pk=None, file_id=None):
+        """
+        Скачивает конкретный файл отправки.
+        
+        Возвращает конкретный файл отправки для скачивания.
+        """
+        try:
+            file_instance = ShipmentFile.objects.get(id=file_id, shipment_id=pk)
             file_path = file_instance.get_file_path()
 
             if not os.path.exists(file_path):
@@ -553,26 +572,43 @@ class RequestViewSet(viewsets.ModelViewSet):
             if os.path.exists(tmp_path):
                 os.rename(tmp_path, target_path)
 
-    @action(detail=True, methods=['get'], url_path='download-file')
-    def request_download_file(self, request, pk=None):
-        """ Скачивание файлов заявки. """
+    @action(detail=True, methods=['get'], url_path='download-all-files', url_name='download_all_files')
+    def download_all_files(self, request, pk=None):
+        """
+        Скачивает все файлы заявки.
+        
+        Возвращает все файлы заявки для скачивания.
+        """
         try:
-            file_instance = RequestFile.objects.get(id=pk, request_id=self.get_object().id)
+            request_instance = self.get_object()
+            files = RequestFile.objects.filter(request=request_instance)
+            response = request_instance.get_files_zip()
+            response['Content-Disposition'] = f'attachment; filename="{request_instance.name}_files.zip"'
+            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+            return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'], url_path=r'download-file/(?P<file_id>\d+)', url_name='download_single_file')
+    def download_single_file(self, request, pk=None, file_id=None):
+        """
+        Скачивает конкретный файл заявки.
+        
+        Возвращает конкретный файл заявки для скачивания.
+        """
+        try:
+            file_instance = RequestFile.objects.get(id=file_id, request_id=pk)
             full_path = file_instance.get_file_path()
 
             if not os.path.exists(full_path):
                 raise Http404("Файл не найден")
 
+            response = FileResponse(open(full_path, 'rb'), as_attachment=True)
+            response['Content-Disposition'] = f'attachment; filename="{file_instance.file}"'
+            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+            return response
         except RequestFile.DoesNotExist:
             raise Http404("Файл не найден")
-
-        response = FileResponse(open(full_path, 'rb'), as_attachment=True)
-
-        # Корректная обработка имени файла
-        response['Content-Disposition'] = f'attachment; filename="{file_instance.file}"'
-        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-
-        return response
 
     @action(detail=True, methods=['delete'], url_path=r'files/(?P<file_id>\d+)')
     def delete_file(self, request, pk=None, file_id=None):
@@ -600,44 +636,194 @@ class RequestViewSet(viewsets.ModelViewSet):
         super().perform_destroy(instance)
 
 
-@api_view(['POST'])
-def send_email(request):
-    """
-    Отправка электронной почты с поддержкой HTML и текстового содержимого.
-    """
-    serializer = EmailSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    data = serializer.validated_data
-    
-    try:
-        # Создаем MIME-сообщение
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = data['subject']
-        msg['From'] = f"{data['sender_name']} <{data['sender_email']}>"
-        msg['To'] = data['recipient_email']
+class AnalyticsSummaryView(generics.GenericAPIView):
+    serializer_class = AnalyticsSummarySerializer
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
-        # Добавляем текстовое содержимое
-        part1 = MIMEText(data['message_plain'], 'plain')
-        msg.attach(part1)
+    def get(self, request):
+        user = request.user
+        user_profile = user.userprofile
+        
+        # Получаем данные по отправлениям
+        shipments = Shipment.objects.filter(company=user_profile.company)
+        total_shipments = shipments.count()
+        shipments_by_status = shipments.values('status__code').annotate(count=Count('id'))
+        
+        # Получаем данные по заявкам
+        requests = Request.objects.filter(company=user_profile.company)
+        total_requests = requests.count()
+        requests_by_status = requests.values('status__code').annotate(count=Count('id'))
+        
+        # Получаем финансовые данные
+        finances = Finance.objects.filter(company=user_profile.company)
+        total_revenue = finances.filter(operation_type='income').aggregate(total=Sum('amount'))['total'] or 0
+        total_expenses = finances.filter(operation_type='expense').aggregate(total=Sum('amount'))['total'] or 0
+        total_profit = total_revenue - total_expenses
+        
+        # Группируем по валютам
+        revenue_by_currency = finances.filter(operation_type='income').values('currency').annotate(total=Sum('amount'))
+        expenses_by_currency = finances.filter(operation_type='expense').values('currency').annotate(total=Sum('amount'))
+        
+        data = {
+            'total_shipments': total_shipments,
+            'total_requests': total_requests,
+            'total_revenue': total_revenue,
+            'total_expenses': total_expenses,
+            'total_profit': total_profit,
+            'shipments_by_status': {item['status__code']: item['count'] for item in shipments_by_status},
+            'requests_by_status': {item['status__code']: item['count'] for item in requests_by_status},
+            'revenue_by_currency': {item['currency']: item['total'] for item in revenue_by_currency},
+            'expenses_by_currency': {item['currency']: item['total'] for item in expenses_by_currency}
+        }
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
-        # Если есть HTML-содержимое, добавляем его
-        if data['message_html']:
-            part2 = MIMEText(data['message_html'], 'html')
-            msg.attach(part2)
 
-        # Создаем SMTP-соединение с TLS
-        context = ssl.create_default_context(cafile=certifi.where())
-        with smtplib.SMTP_SSL("smtp.example.com", 465, context=context) as server:
-            server.login(data['sender_email'], 'password')  # В реальной жизни пароль должен быть в безопасном хранилище
-            server.sendmail(data['sender_email'], data['recipient_email'], msg.as_string())
+class BalanceView(generics.GenericAPIView):
+    serializer_class = BalanceSerializer
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
-        return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+    def get(self, request):
+        if not hasattr(request.user, 'userprofile') or not request.user.userprofile.company:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        company = request.user.userprofile.company
+        
+        # Получаем суммы по входящим операциям (доходы)
+        income = Finance.objects.filter(
+            company=company,
+            operation_type='in'
+        ).values('currency').annotate(total=Sum('amount'))
+        
+        # Получаем суммы по исходящим операциям (расходы)
+        expenses = Finance.objects.filter(
+            company=company,
+            operation_type='out'
+        ).values('currency').annotate(total=Sum('amount'))
+        
+        # Форматируем результат
+        result = {
+            'income': {},
+            'expenses': {},
+            'balance': {}
+        }
+        
+        # Заполняем доходы
+        for item in income:
+            currency = item['currency']
+            result['income'][currency] = float(item['total'] or 0)
+            result['balance'][currency] = float(item['total'] or 0)
+        
+        # Заполняем расходы и обновляем баланс
+        for item in expenses:
+            currency = item['currency']
+            amount = float(item['total'] or 0)
+            result['expenses'][currency] = amount
+            
+            if currency in result['balance']:
+                result['balance'][currency] -= amount
+            else:
+                result['balance'][currency] = -amount
+        
+        serializer = self.get_serializer(data=result)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
-    except Exception as e:
-        # Обработка ошибок отправки
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CounterpartyBalanceView(generics.GenericAPIView):
+    serializer_class = CounterpartyBalanceSerializer
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request):
+        if not hasattr(request.user, 'userprofile') or not request.user.userprofile.company:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        company = request.user.userprofile.company
+        
+        # Получаем все операции по контрагентам
+        operations = Finance.objects.filter(
+            company=company,
+            counterparty__isnull=False
+        )
+        
+        counterparties = {}
+        
+        for op in operations:
+            counterparty_id = op.counterparty.id
+            counterparty_name = op.counterparty.get_full_name() or op.counterparty.username
+            currency = op.currency
+            amount = op.amount or 0
+            
+            if op.operation_type == 'out':
+                amount = -amount
+            
+            if counterparty_id not in counterparties:
+                counterparties[counterparty_id] = {
+                    'id': counterparty_id,
+                    'name': counterparty_name,
+                    'balances': {}
+                }
+            
+            if currency not in counterparties[counterparty_id]['balances']:
+                counterparties[counterparty_id]['balances'][currency] = 0
+                
+            counterparties[counterparty_id]['balances'][currency] += amount
+        
+        # Преобразуем в список и форматируем суммы как float
+        result = []
+        for cp_id, data in counterparties.items():
+            for currency in data['balances']:
+                data['balances'][currency] = float(data['balances'][currency])
+            result.append(data)
+        
+        serializer = self.get_serializer(data=result, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
+
+
+class EmailView(generics.GenericAPIView):
+    serializer_class = EmailSerializer
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        data = serializer.validated_data
+        
+        try:
+            # Создаем MIME-сообщение
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = data['subject']
+            msg['From'] = f"{data['sender_name']} <{data['sender_email']}>"
+            msg['To'] = data['recipient_email']
+
+            # Добавляем текстовое содержимое
+            part1 = MIMEText(data['message_plain'], 'plain')
+            msg.attach(part1)
+
+            # Если есть HTML-содержимое, добавляем его
+            if data['message_html']:
+                part2 = MIMEText(data['message_html'], 'html')
+                msg.attach(part2)
+
+            # Создаем SMTP-соединение с TLS
+            context = ssl.create_default_context(cafile=certifi.where())
+            with smtplib.SMTP_SSL("smtp.example.com", 465, context=context) as server:
+                server.login(data['sender_email'], 'password')  # В реальной жизни пароль должен быть в безопасном хранилище
+                server.sendmail(data['sender_email'], data['recipient_email'], msg.as_string())
+
+            return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Обработка ошибок отправки
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ArticleList(generics.ListCreateAPIView):
@@ -877,153 +1063,6 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
             result['totals'][key] = float(result['totals'][key])
             
         return Response(result)
-
-
-@api_view(['GET'])
-def get_balance(request):
-    """
-    Получить общий баланс по всем финансовым операциям компании
-    """
-    if not hasattr(request.user, 'userprofile') or not request.user.userprofile.company:
-        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-    
-    company = request.user.userprofile.company
-    
-    # Получаем суммы по входящим операциям (доходы)
-    income = Finance.objects.filter(
-        company=company,
-        operation_type='in'
-    ).values('currency').annotate(total=Sum('amount'))
-    
-    # Получаем суммы по исходящим операциям (расходы)
-    expenses = Finance.objects.filter(
-        company=company,
-        operation_type='out'
-    ).values('currency').annotate(total=Sum('amount'))
-    
-    # Форматируем результат
-    result = {
-        'income': {},
-        'expenses': {},
-        'balance': {}
-    }
-    
-    # Заполняем доходы
-    for item in income:
-        currency = item['currency']
-        result['income'][currency] = float(item['total'] or 0)
-        result['balance'][currency] = float(item['total'] or 0)
-    
-    # Заполняем расходы и обновляем баланс
-    for item in expenses:
-        currency = item['currency']
-        amount = float(item['total'] or 0)
-        result['expenses'][currency] = amount
-        
-        if currency in result['balance']:
-            result['balance'][currency] -= amount
-        else:
-            result['balance'][currency] = -amount
-    
-    serializer = BalanceSerializer(result)
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-def counterparty_balance(request):
-    """
-    Получить баланс по контрагентам
-    """
-    if not hasattr(request.user, 'userprofile') or not request.user.userprofile.company:
-        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-    
-    company = request.user.userprofile.company
-    
-    
-    # Получаем все операции по контрагентам
-    operations = Finance.objects.filter(
-        company=company,
-        counterparty__isnull=False
-    )
-    
-    counterparties = {}
-    
-    for op in operations:
-        counterparty_id = op.counterparty.id
-        counterparty_name = op.counterparty.get_full_name() or op.counterparty.username
-        currency = op.currency
-        amount = op.amount or 0
-        
-        if op.operation_type == 'out':
-            amount = -amount
-        
-        if counterparty_id not in counterparties:
-            counterparties[counterparty_id] = {
-                'id': counterparty_id,
-                'name': counterparty_name,
-                'balances': {}
-            }
-        
-        if currency not in counterparties[counterparty_id]['balances']:
-            counterparties[counterparty_id]['balances'][currency] = 0
-            
-        counterparties[counterparty_id]['balances'][currency] += amount
-    
-    # Преобразуем в список и форматируем суммы как float
-    result = []
-    for cp_id, data in counterparties.items():
-        for currency in data['balances']:
-            data['balances'][currency] = float(data['balances'][currency])
-        result.append(data)
-    
-    serializer = CounterpartyBalanceSerializer(result, many=True)
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def analytics_summary(request):
-    """
-    Получение сводной аналитики по отправлениям, заявкам и финансам.
-    """
-    user = request.user
-    user_profile = user.userprofile
-    
-    # Получаем данные по отправлениям
-    shipments = Shipment.objects.filter(company=user_profile.company)
-    total_shipments = shipments.count()
-    shipments_by_status = shipments.values('status__code').annotate(count=Count('id'))
-    
-    # Получаем данные по заявкам
-    requests = Request.objects.filter(company=user_profile.company)
-    total_requests = requests.count()
-    requests_by_status = requests.values('status__code').annotate(count=Count('id'))
-    
-    # Получаем финансовые данные
-    finances = Finance.objects.filter(company=user_profile.company)
-    total_revenue = finances.filter(operation_type='income').aggregate(total=Sum('amount'))['total'] or 0
-    total_expenses = finances.filter(operation_type='expense').aggregate(total=Sum('amount'))['total'] or 0
-    total_profit = total_revenue - total_expenses
-    
-    # Группируем по валютам
-    revenue_by_currency = finances.filter(operation_type='income').values('currency').annotate(total=Sum('amount'))
-    expenses_by_currency = finances.filter(operation_type='expense').values('currency').annotate(total=Sum('amount'))
-    
-    data = {
-        'total_shipments': total_shipments,
-        'total_requests': total_requests,
-        'total_revenue': total_revenue,
-        'total_expenses': total_expenses,
-        'total_profit': total_profit,
-        'shipments_by_status': {item['status__code']: item['count'] for item in shipments_by_status},
-        'requests_by_status': {item['status__code']: item['count'] for item in requests_by_status},
-        'revenue_by_currency': {item['currency']: item['total'] for item in revenue_by_currency},
-        'expenses_by_currency': {item['currency']: item['total'] for item in expenses_by_currency}
-    }
-    
-    serializer = AnalyticsSummarySerializer(data=data)
-    serializer.is_valid(raise_exception=True)
-    return Response(serializer.data)
 
 
 class RequestStatusViewSet(viewsets.ModelViewSet):
