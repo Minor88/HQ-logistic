@@ -2,20 +2,20 @@ from rest_framework import serializers
 from .models import (
     UserProfile, Company, Shipment, Request, 
     RequestFile, ShipmentFolder, ShipmentFile, 
-    Article, Finance, ShipmentCalculation
+    Article, Finance, ShipmentCalculation, ShipmentStatus, RequestStatus
 )
 from django.contrib.auth.models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserProfileUserSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для стандартной модели пользователя Django.
-    Используется для отображения основной информации о пользователе.
+    Сериализатор для модели User.
+    Используется в UserProfileSerializer.
     """
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'date_joined']
-        read_only_fields = ['date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        read_only_fields = ['id', 'username', 'email']
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -30,17 +30,16 @@ class CompanySerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для профиля пользователя.
-    Включает вложенный сериализатор пользователя Django и дополнительные поля
-    для отображения текстовых значений выборов и связанных объектов.
+    Сериализатор для модели UserProfile.
     """
-    user = UserSerializer(read_only=True)
-    user_group_display = serializers.CharField(source='get_user_group_display', read_only=True)
+    user = UserProfileUserSerializer()
     company_name = serializers.CharField(source='company.name', read_only=True)
+    role_display = serializers.CharField(source='get_user_group_display', read_only=True)
     
     class Meta:
         model = UserProfile
-        fields = ['id', 'user', 'company', 'company_name', 'name', 'phone', 'comment', 'user_group', 'user_group_display', 'is_active']
+        fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone']
+        read_only_fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone']
 
 
 class RequestFileSerializer(serializers.ModelSerializer):
@@ -140,13 +139,21 @@ class RequestDetailSerializer(RequestListSerializer):
         fields = RequestListSerializer.Meta.fields + ['rate', 'comment', 'files']
 
 
+class ShipmentStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShipmentStatus
+        fields = ['id', 'code', 'name', 'is_default', 'is_final', 'order']
+        read_only_fields = ['created_at']
+
+
 class ShipmentListSerializer(serializers.ModelSerializer):
     """
     Сериализатор для списка отправок.
     Включает основные поля для отображения в списке и дополнительные поля
     для отображения связанных объектов и вычисляемых значений.
     """
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    status_display = serializers.CharField(source='status.name', read_only=True)
+    status_code = serializers.CharField(source='status.code', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.name', read_only=True)
     requests_count = serializers.SerializerMethodField()
@@ -154,12 +161,13 @@ class ShipmentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipment
         fields = [
-            'id', 'number', 'company', 'company_name', 'status', 'status_display', 
-            'created_at', 'created_by', 'created_by_name', 'requests_count'
+            'id', 'number', 'company', 'company_name', 'status', 'status_code',
+            'status_display', 'created_at', 'created_by', 'created_by_name',
+            'requests_count'
         ]
         read_only_fields = ['created_at', 'requests_count']
     
-    def get_requests_count(self, obj):
+    def get_requests_count(self, obj: Shipment) -> int:
         """
         Вычисляет количество заявок, связанных с отправкой.
         """
@@ -219,3 +227,91 @@ class FinanceDetailSerializer(FinanceListSerializer):
     
     class Meta(FinanceListSerializer.Meta):
         fields = FinanceListSerializer.Meta.fields + ['comment', 'basis', 'basis_number']
+
+
+class RequestStatusSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для статусов заявок.
+    """
+    class Meta:
+        model = RequestStatus
+        fields = ['id', 'code', 'name', 'is_default', 'is_final', 'order']
+        read_only_fields = ['created_at']
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='status.name', read_only=True)
+    status_code = serializers.CharField(source='status.code', read_only=True)
+    
+    class Meta:
+        model = Request
+        fields = [
+            'id', 'number', 'status', 'status_display', 'status_code',
+            'client', 'manager', 'shipment', 'created_at', 'updated_at',
+            'rate', 'comment'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class AnalyticsSummarySerializer(serializers.Serializer):
+    total_shipments = serializers.IntegerField()
+    total_requests = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_expenses = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_profit = serializers.DecimalField(max_digits=10, decimal_places=2)
+    shipments_by_status = serializers.DictField(child=serializers.IntegerField())
+    requests_by_status = serializers.DictField(child=serializers.IntegerField())
+    revenue_by_currency = serializers.DictField(child=serializers.DecimalField(max_digits=10, decimal_places=2))
+    expenses_by_currency = serializers.DictField(child=serializers.DecimalField(max_digits=10, decimal_places=2))
+
+
+class BalanceSerializer(serializers.Serializer):
+    """
+    Сериализатор для баланса компании.
+    """
+    income = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text="Доходы по валютам"
+    )
+    expenses = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text="Расходы по валютам"
+    )
+    balance = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text="Баланс по валютам"
+    )
+
+
+class CounterpartyBalanceSerializer(serializers.Serializer):
+    """
+    Сериализатор для баланса контрагентов.
+    """
+    id = serializers.IntegerField(help_text="ID контрагента")
+    name = serializers.CharField(help_text="Название контрагента")
+    balances = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text="Балансы по валютам"
+    )
+
+
+class EmailSerializer(serializers.Serializer):
+    """
+    Сериализатор для отправки email.
+    """
+    sender_email = serializers.EmailField(help_text="Email отправителя")
+    sender_name = serializers.CharField(help_text="Имя отправителя", required=False, default="Логистическая компания")
+    recipient_email = serializers.EmailField(help_text="Email получателя")
+    subject = serializers.CharField(help_text="Тема письма", required=False, default="Уведомление от логистической компании")
+    message_plain = serializers.CharField(help_text="Текстовое сообщение", required=False, default="")
+    message_html = serializers.CharField(help_text="HTML сообщение", required=False, default="")
+
+    def to_representation(self, instance):
+        return {
+            'sender_email': instance.get('sender_email'),
+            'sender_name': instance.get('sender_name', 'Логистическая компания'),
+            'recipient_email': instance.get('recipient_email'),
+            'subject': instance.get('subject', 'Уведомление от логистической компании'),
+            'message_plain': instance.get('message_plain', ''),
+            'message_html': instance.get('message_html', '')
+        }

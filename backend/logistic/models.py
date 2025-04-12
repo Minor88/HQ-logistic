@@ -4,6 +4,7 @@ import os
 from django.utils import timezone
 from django.conf import settings
 import shutil
+from django.core.exceptions import ValidationError
 
 # Модель логистической компании
 class Company(models.Model):
@@ -59,6 +60,31 @@ class UserProfile(models.Model):
             ("edit_own_company_data", "Может редактировать данные своей компании"),
         ]
 
+class ShipmentStatus(models.Model):
+    """Модель статуса отправки"""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name='Компания')
+    code = models.CharField(max_length=50, verbose_name='Код статуса')
+    name = models.CharField(max_length=100, verbose_name='Название статуса')
+    is_default = models.BooleanField(default=False, verbose_name='Статус по умолчанию')
+    is_final = models.BooleanField(default=False, verbose_name='Финальный статус')
+    order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def clean(self):
+        if self.is_default and ShipmentStatus.objects.filter(
+            company=self.company, is_default=True
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError('У компании уже есть статус по умолчанию')
+    
+    class Meta:
+        verbose_name = 'Статус отправки'
+        verbose_name_plural = 'Статусы отправок'
+        unique_together = [['company', 'code'], ['company', 'name']]
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
 # Модель отправки
 class Shipment(models.Model):
     """
@@ -66,26 +92,18 @@ class Shipment(models.Model):
     Представляет собой отправку сборного груза, которая содержит несколько заявок.
     Имеет статус, который отражает текущее состояние отправки.
     """
-    SHIPMENT_STATUS_CHOICES = [
-        ('at_warehouse', 'Формируется на складе'),
-        ('document_preparation', 'Подготовка документов'),
-        ('departed', 'Вышел со склада'),
-        ('border_crossing', 'Прохождение границы'),
-        ('customs_clearance', 'Таможенная очистка'),
-        ('on_way_to_customs', 'В пути на таможню'),
-        ('on_way_to_warehouse', 'В пути на склад выгрузки'),
-        ('at_unloading_warehouse', 'На складе выгрузки'),
-        ('done', 'Завершен'),
-    ]
     number = models.CharField(max_length=50, verbose_name='Номер')
     company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name='Компания')
-    status = models.CharField(max_length=50, choices=SHIPMENT_STATUS_CHOICES, default='at_warehouse', verbose_name='Статус')
+    status = models.ForeignKey(ShipmentStatus, on_delete=models.PROTECT, verbose_name='Статус')
     comment = models.TextField(blank=True, null=True, verbose_name='Комментарий')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Дата создания')
     created_by = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, related_name='created_shipments', verbose_name='Создал')
     
+    def get_status_display(self):
+        return self.status.name if self.status else None
+
     def __str__(self):
-        return f"Отправка #{self.number} ({self.get_status_display()})"
+        return f"Отправка #{self.number} - {self.get_status_display()}"
     
     class Meta:
         verbose_name = 'Отправка'
@@ -118,6 +136,34 @@ def request_directory_path(instance, filename):
     # Если заявка создана, файл сохраняется в папке с ID заявки
     return f'logistic/requests/{instance.pk}/{filename}'
 
+class RequestStatus(models.Model):
+    """
+    Модель для статусов заявок.
+    Каждая компания имеет свой набор статусов.
+    """
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='request_statuses')
+    code = models.CharField(max_length=20, verbose_name='Код статуса')
+    name = models.CharField(max_length=100, verbose_name='Название статуса')
+    is_default = models.BooleanField(default=False, verbose_name='Статус по умолчанию')
+    is_final = models.BooleanField(default=False, verbose_name='Финальный статус')
+    order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('company', 'code')]
+        ordering = ['order', 'created_at']
+        verbose_name = 'Статус заявки'
+        verbose_name_plural = 'Статусы заявок'
+
+    def clean(self):
+        if self.is_default:
+            # Проверяем, что у компании нет других статусов по умолчанию
+            if RequestStatus.objects.filter(company=self.company, is_default=True).exclude(id=self.id).exists():
+                raise ValidationError('У компании уже есть статус по умолчанию')
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
 class Request(models.Model):
     """
     Модель заявки на перевозку груза.
@@ -143,14 +189,17 @@ class Request(models.Model):
     actual_volume = models.FloatField(null=True, blank=True, verbose_name='Фактический объем')
     rate = models.TextField(null=True, blank=True, verbose_name='Ставка')
     comment = models.TextField(blank=True, null=True, verbose_name='Комментарий')
-    status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='new', verbose_name='Статус')
+    status = models.ForeignKey(RequestStatus, on_delete=models.PROTECT, verbose_name='Статус')
     client = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='client_requests', verbose_name='Клиент')
     manager = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='manager_requests', verbose_name='Менеджер')
     shipment = models.ForeignKey(Shipment, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Отправка')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Дата создания')
     
+    def get_status_display(self):
+        return self.status.name if self.status else None
+
     def __str__(self):
-        return f"Заявка #{self.number or 'Новая'} ({self.get_status_display()})"
+        return f"Заявка #{self.number} - {self.get_status_display()}"
     
     class Meta:
         verbose_name = 'Заявка'

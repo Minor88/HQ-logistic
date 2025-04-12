@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status, generics
-from .models import UserProfile, Shipment, Request, RequestFile, ShipmentFile, ShipmentFolder, Article, Finance, ShipmentCalculation, Company
-from .serializers import UserProfileSerializer, ShipmentListSerializer, ShipmentDetailSerializer, RequestListSerializer, RequestDetailSerializer, RequestFileSerializer, ShipmentFileSerializer, ShipmentFolderSerializer, ArticleSerializer, FinanceListSerializer, FinanceDetailSerializer, ShipmentCalculationSerializer, CompanySerializer
+from .models import UserProfile, Shipment, Request, RequestFile, ShipmentFile, ShipmentFolder, Article, Finance, ShipmentCalculation, Company, ShipmentStatus, RequestStatus
+from .serializers import UserProfileSerializer, ShipmentListSerializer, ShipmentDetailSerializer, RequestListSerializer, RequestDetailSerializer, RequestFileSerializer, ShipmentFileSerializer, ShipmentFolderSerializer, ArticleSerializer, FinanceListSerializer, FinanceDetailSerializer, ShipmentCalculationSerializer, CompanySerializer, ShipmentStatusSerializer, RequestStatusSerializer, AnalyticsSummarySerializer, BalanceSerializer, CounterpartyBalanceSerializer, EmailSerializer
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 import os
@@ -17,7 +17,7 @@ import ssl
 import certifi
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from decimal import Decimal, ROUND_HALF_UP
 from .permissions import (
     IsSuperuser, IsCompanyAdmin, IsCompanyBoss, 
@@ -28,6 +28,9 @@ from django.shortcuts import get_object_or_404
 from django.conf import settings
 import json
 import datetime
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -57,6 +60,42 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return Company.objects.filter(id=self.request.user.userprofile.company.id)
         
         return Company.objects.none()
+
+    def perform_create(self, serializer):
+        company = serializer.save()
+        self._create_default_statuses(company)
+    
+    def _create_default_statuses(self, company):
+        """
+        Создает стандартные статусы для новой компании.
+        """
+        # Статусы для заявок
+        request_statuses = [
+            {'code': 'new', 'name': 'Новая заявка', 'is_default': True, 'is_final': False, 'order': 1},
+            {'code': 'expected', 'name': 'Ожидается на складе', 'is_default': False, 'is_final': False, 'order': 2},
+            {'code': 'on_warehouse', 'name': 'Формируется', 'is_default': False, 'is_final': False, 'order': 3},
+            {'code': 'in_progress', 'name': 'В работе', 'is_default': False, 'is_final': False, 'order': 4},
+            {'code': 'ready', 'name': 'Готово к выдаче', 'is_default': False, 'is_final': False, 'order': 5},
+            {'code': 'delivered', 'name': 'Доставлено', 'is_default': False, 'is_final': True, 'order': 6}
+        ]
+        
+        # Статусы для отправок
+        shipment_statuses = [
+            {'code': 'at_warehouse', 'name': 'На складе', 'is_default': True, 'is_final': False, 'order': 1},
+            {'code': 'document_preparation', 'name': 'Подготовка документов', 'is_default': False, 'is_final': False, 'order': 2},
+            {'code': 'departed', 'name': 'Отправлен', 'is_default': False, 'is_final': False, 'order': 3},
+            {'code': 'in_transit', 'name': 'В пути', 'is_default': False, 'is_final': False, 'order': 4},
+            {'code': 'delivered', 'name': 'Доставлен', 'is_default': False, 'is_final': True, 'order': 5},
+            {'code': 'cancelled', 'name': 'Отменен', 'is_default': False, 'is_final': True, 'order': 6}
+        ]
+        
+        # Создаем статусы для заявок
+        for status_data in request_statuses:
+            RequestStatus.objects.create(company=company, **status_data)
+            
+        # Создаем статусы для отправок
+        for status_data in shipment_statuses:
+            ShipmentStatus.objects.create(company=company, **status_data)
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -102,6 +141,36 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class ShipmentStatusViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для управления статусами отправок.
+    Доступен только администраторам компании.
+    """
+    serializer_class = ShipmentStatusSerializer
+    permission_classes = [IsCompanyAdmin]
+    queryset = ShipmentStatus.objects.all()
+
+    def get_queryset(self):
+        """
+        Возвращает только статусы компании пользователя.
+        """
+        return ShipmentStatus.objects.filter(company=self.request.user.userprofile.company)
+
+    def perform_create(self, serializer):
+        """
+        При создании статуса автоматически устанавливает компанию пользователя.
+        """
+        serializer.save(company=self.request.user.userprofile.company)
+
+    @action(detail=False, methods=['get'])
+    def available_statuses(self, request):
+        statuses = ShipmentStatus.objects.filter(
+            company=request.user.userprofile.company
+        ).order_by('order')
+        serializer = ShipmentStatusSerializer(statuses, many=True)
+        return Response(serializer.data)
+
+
 class ShipmentViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления отправками.
@@ -125,43 +194,139 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         return ShipmentListSerializer
     
     def get_queryset(self):
-        """
-        Переопределяет queryset в зависимости от роли пользователя.
+        user = self.request.user
+        if not user.is_authenticated:
+            return Shipment.objects.none()
         
-        Клиенты видят только отправки, связанные с их заявками,
-        остальные сотрудники видят все отправки своей компании.
-        """
-        # Фильтрация по компании пользователя
-        if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.company:
-            company = self.request.user.userprofile.company
-            
-            # Клиенты видят только отправки, связанные с их заявками
-            if self.request.user.userprofile.user_group == 'client':
-                client_requests = Request.objects.filter(client=self.request.user.userprofile)
-                return Shipment.objects.filter(request__in=client_requests, company=company).distinct()
-            
-            # Остальные видят все отправки своей компании
+        user_profile = user.userprofile
+        company = user_profile.company
+        
+        if user_profile.user_group in ['superuser', 'admin']:
             return Shipment.objects.filter(company=company)
-        
-        # Суперпользователи видят все
-        if self.request.user.is_superuser or (hasattr(self.request.user, 'userprofile') and 
-                                             self.request.user.userprofile.user_group == 'superuser'):
-            return Shipment.objects.all()
+        elif user_profile.user_group == 'boss':
+            return Shipment.objects.filter(company=company)
+        elif user_profile.user_group == 'manager':
+            return Shipment.objects.filter(company=company)
+        elif user_profile.user_group == 'warehouse':
+            # Проверяем существование статусов
+            warehouse_status = ShipmentStatus.objects.filter(
+                company=company,
+                code='at_warehouse'
+            ).first()
+            doc_status = ShipmentStatus.objects.filter(
+                company=company,
+                code='document_preparation'
+            ).first()
             
+            if not warehouse_status or not doc_status:
+                # Если статусы не существуют, создаем их
+                self._create_default_statuses(company)
+                warehouse_status = ShipmentStatus.objects.get(
+                    company=company,
+                    code='at_warehouse'
+                )
+                doc_status = ShipmentStatus.objects.get(
+                    company=company,
+                    code='document_preparation'
+                )
+            
+            return Shipment.objects.filter(
+                company=company,
+                status__in=[warehouse_status, doc_status]
+            )
+        elif user_profile.user_group == 'client':
+            return Shipment.objects.filter(
+                company=company,
+                request__client=user_profile
+            ).distinct()
+        
         return Shipment.objects.none()
     
+    def _create_default_statuses(self, company):
+        """Создает дефолтные статусы для компании"""
+        default_statuses = [
+            {
+                'code': 'at_warehouse',
+                'name': 'На складе',
+                'is_default': False,
+                'is_final': False,
+                'order': 1
+            },
+            {
+                'code': 'document_preparation',
+                'name': 'Подготовка документов',
+                'is_default': False,
+                'is_final': False,
+                'order': 2
+            },
+            {
+                'code': 'departed',
+                'name': 'Отправлен',
+                'is_default': False,
+                'is_final': False,
+                'order': 3
+            },
+            {
+                'code': 'in_transit',
+                'name': 'В пути',
+                'is_default': False,
+                'is_final': False,
+                'order': 4
+            },
+            {
+                'code': 'delivered',
+                'name': 'Доставлен',
+                'is_default': False,
+                'is_final': True,
+                'order': 5
+            },
+            {
+                'code': 'cancelled',
+                'name': 'Отменен',
+                'is_default': False,
+                'is_final': True,
+                'order': 6
+            }
+        ]
+        
+        for status_data in default_statuses:
+            ShipmentStatus.objects.get_or_create(
+                company=company,
+                code=status_data['code'],
+                defaults=status_data
+            )
+
     def perform_create(self, serializer):
-        """
-        Автоматически заполняет поля company и created_by при создании отправки.
-        """
-        # Добавляем компанию и создателя при создании
-        company = None
-        if hasattr(self.request.user, 'userprofile'):
-            company = self.request.user.userprofile.company
+        user_profile = self.request.user.userprofile
+        company = user_profile.company
+        
+        # Получаем статус по умолчанию для компании
+        default_status = ShipmentStatus.objects.filter(
+            company=company,
+            is_default=True
+        ).first()
+        
+        if not default_status:
+            # Если нет дефолтного статуса, создаем все статусы
+            self._create_default_statuses(company)
+            default_status = ShipmentStatus.objects.filter(
+                company=company,
+                is_default=True
+            ).first()
+            
+            if not default_status:
+                # Если все еще нет дефолтного статуса, берем первый
+                default_status = ShipmentStatus.objects.filter(
+                    company=company
+                ).first()
+                
+                if not default_status:
+                    raise ValidationError('Не удалось создать статусы для компании')
         
         serializer.save(
             company=company,
-            created_by=getattr(self.request.user, 'userprofile', None)
+            created_by=user_profile,
+            status=default_status
         )
 
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser])
@@ -210,15 +375,15 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         serializer = ShipmentFileSerializer(created_files, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['get'], url_path=r'download_file/(?P<file_id>\d+)')
-    def download_file(self, request, pk=None, file_id=None):
+    @action(detail=True, methods=['get'], url_path='download-file')
+    def shipment_download_file(self, request, pk=None):
         """
         Скачивает файл отправки.
         
         Возвращает файл как вложение для скачивания.
         """
         try:
-            file_instance = ShipmentFile.objects.get(id=file_id, shipment_id=pk)
+            file_instance = ShipmentFile.objects.get(id=pk)
             file_path = file_instance.get_file_path()
 
             if not os.path.exists(file_path):
@@ -247,8 +412,8 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         except ShipmentFile.DoesNotExist:
             return Response({"error": "Файл не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['post'], url_path='create_folder')
-    def create_folder(self, request, pk=None):
+    @action(detail=True, methods=['post'], url_path='create-folder')
+    def shipment_create_folder(self, request, pk=None):
         """
         Создает новую папку для отправки.
         """
@@ -310,47 +475,41 @@ class RequestViewSet(viewsets.ModelViewSet):
         return RequestListSerializer
     
     def get_queryset(self):
-        # Фильтрация по компании пользователя
-        if hasattr(self.request.user, 'userprofile'):
-            user_profile = self.request.user.userprofile
-            company = user_profile.company
-            
-            if not company:
-                return Request.objects.none()
-            
-            # Клиенты видят только свои заявки
-            if user_profile.user_group == 'client':
-                return Request.objects.filter(client=user_profile, company=company)
-            
-            # Остальные видят все заявки своей компании
-            return Request.objects.filter(company=company)
-        
-        # Суперпользователи видят все
-        if self.request.user.is_superuser or (hasattr(self.request.user, 'userprofile') and 
-                                             self.request.user.userprofile.user_group == 'superuser'):
+        """
+        Возвращает заявки в зависимости от роли пользователя.
+        """
+        user = self.request.user
+        if user.is_superuser:
             return Request.objects.all()
-            
-        return Request.objects.none()
+        
+        user_profile = user.userprofile
+        if user_profile.role == 'admin':
+            return Request.objects.filter(client__company=user_profile.company)
+        elif user_profile.role == 'boss':
+            return Request.objects.filter(client__company=user_profile.company)
+        elif user_profile.role == 'manager':
+            return Request.objects.filter(
+                Q(client__company=user_profile.company) &
+                (Q(manager=user_profile) | Q(manager__isnull=True))
+            )
+        elif user_profile.role == 'warehouse':
+            return Request.objects.filter(
+                Q(client__company=user_profile.company) &
+                Q(status__code__in=['on_warehouse', 'ready'])
+            )
+        else:  # client
+            return Request.objects.filter(client=user_profile)
     
     def perform_create(self, serializer):
-        # Добавляем компанию и менеджера при создании
-        company = None
-        manager = None
-        
-        if hasattr(self.request.user, 'userprofile'):
-            company = self.request.user.userprofile.company
-            
-            # Если запрос создает не клиент, то создатель становится менеджером
-            if self.request.user.userprofile.user_group != 'client':
-                manager = self.request.user.userprofile
-        
-        request_instance = serializer.save(company=company, manager=manager)
-        
-        # Если есть временные файлы, перемещаем их в папку заявки
-        self._move_tmp_files(request_instance)
+        """
+        При создании заявки устанавливает статус по умолчанию.
+        """
+        company = self.request.user.userprofile.company
+        default_status = RequestStatus.objects.get(company=company, is_default=True)
+        serializer.save(status=default_status)
 
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser])
-    def upload_files(self, request, pk=None):
+    def request_upload_files(self, request, pk=None):
         request_instance = self.get_object()
         files = request.FILES.getlist('files')
 
@@ -394,11 +553,11 @@ class RequestViewSet(viewsets.ModelViewSet):
             if os.path.exists(tmp_path):
                 os.rename(tmp_path, target_path)
 
-    @action(detail=True, methods=['get'], url_path=r'download_file/(?P<file_id>\d+)')
-    def download_file(self, request, pk=None, file_id=None):
+    @action(detail=True, methods=['get'], url_path='download-file')
+    def request_download_file(self, request, pk=None):
         """ Скачивание файлов заявки. """
         try:
-            file_instance = RequestFile.objects.get(id=file_id, request_id=pk)
+            file_instance = RequestFile.objects.get(id=pk, request_id=self.get_object().id)
             full_path = file_instance.get_file_path()
 
             if not os.path.exists(full_path):
@@ -446,38 +605,33 @@ def send_email(request):
     """
     Отправка электронной почты с поддержкой HTML и текстового содержимого.
     """
-    sender_email = request.data.get('sender_email')
-    sender_name = request.data.get('sender_name', 'Логистическая компания')
-    recipient_email = request.data.get('recipient_email')
-    subject = request.data.get('subject', 'Уведомление от логистической компании')
-    message_plain = request.data.get('message_plain', '')
-    message_html = request.data.get('message_html', '')
-
-    if not sender_email or not recipient_email:
-        return Response({"error": "Не указаны обязательные поля: sender_email, recipient_email"},
-                        status=status.HTTP_400_BAD_REQUEST)
-
+    serializer = EmailSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    data = serializer.validated_data
+    
     try:
         # Создаем MIME-сообщение
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = f"{sender_name} <{sender_email}>"
-        msg['To'] = recipient_email
+        msg['Subject'] = data['subject']
+        msg['From'] = f"{data['sender_name']} <{data['sender_email']}>"
+        msg['To'] = data['recipient_email']
 
         # Добавляем текстовое содержимое
-        part1 = MIMEText(message_plain, 'plain')
+        part1 = MIMEText(data['message_plain'], 'plain')
         msg.attach(part1)
 
         # Если есть HTML-содержимое, добавляем его
-        if message_html:
-            part2 = MIMEText(message_html, 'html')
+        if data['message_html']:
+            part2 = MIMEText(data['message_html'], 'html')
             msg.attach(part2)
 
         # Создаем SMTP-соединение с TLS
         context = ssl.create_default_context(cafile=certifi.where())
         with smtplib.SMTP_SSL("smtp.example.com", 465, context=context) as server:
-            server.login(sender_email, 'password')  # В реальной жизни пароль должен быть в безопасном хранилище
-            server.sendmail(sender_email, recipient_email, msg.as_string())
+            server.login(data['sender_email'], 'password')  # В реальной жизни пароль должен быть в безопасном хранилище
+            server.sendmail(data['sender_email'], data['recipient_email'], msg.as_string())
 
         return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
 
@@ -547,7 +701,7 @@ class FinanceDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = FinanceDetailSerializer
     permission_classes = [IsCompanyManager]
     lookup_field = 'number'
-    
+
     def get_queryset(self):
         if hasattr(self.request.user, 'userprofile'):
             user_profile = self.request.user.userprofile
@@ -574,15 +728,15 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
     queryset = ShipmentCalculation.objects.all()
     serializer_class = ShipmentCalculationSerializer
     permission_classes = [IsCompanyBoss]
-    
+
     @action(detail=True, methods=['get'])
-    def related_requests(self, request, pk=None):
+    def calculation_related_requests(self, request, pk=None):
         # Получить заявки, связанные с отправлением
         calculation = self.get_object()
         requests = Request.objects.filter(shipment=calculation.shipment)
         serializer = RequestListSerializer(requests, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'], url_path=r'by-shipment/(?P<shipment_id>\d+)')
     def get_by_shipment(self, request, shipment_id=None):
         # Получить или создать расчет для отправления
@@ -590,7 +744,7 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
         calculation, created = ShipmentCalculation.objects.get_or_create(shipment=shipment)
         serializer = self.get_serializer(calculation)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=['post'], url_path='calculate-costs')
     def calculate_costs(self, request, pk=None):
         """
@@ -672,14 +826,14 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
         result['totals']['rub'] = float(result['totals']['rub'])
         
         return Response(result)
-    
+
     def update(self, request, *args, **kwargs):
         # Запрещаем изменение поля shipment при обновлении
         if 'shipment' in request.data:
             return Response({"error": "Cannot change shipment for existing calculation"}, 
                            status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
-    
+
     @action(detail=True, methods=['get'], url_path='expenses')
     def get_expenses(self, request, pk=None):
         """
@@ -771,7 +925,8 @@ def get_balance(request):
         else:
             result['balance'][currency] = -amount
     
-    return Response(result)
+    serializer = BalanceSerializer(result)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -783,6 +938,7 @@ def counterparty_balance(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
     
     company = request.user.userprofile.company
+    
     
     # Получаем все операции по контрагентам
     operations = Finance.objects.filter(
@@ -820,115 +976,73 @@ def counterparty_balance(request):
             data['balances'][currency] = float(data['balances'][currency])
         result.append(data)
     
-    return Response(result)
+    serializer = CounterpartyBalanceSerializer(result, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def analytics_summary(request):
     """
-    Возвращает сводную аналитику по компании.
-    
-    Включает:
-    - Количество активных отправок и заявок
-    - Финансовую сводку
-    - Статистику по статусам
-    
-    Требует аутентификации и привязки к компании.
+    Получение сводной аналитики по отправлениям, заявкам и финансам.
     """
-    if not hasattr(request.user, 'userprofile') or not request.user.userprofile.company:
-        return Response({"error": "Unauthorized or no company assigned"}, status=status.HTTP_401_UNAUTHORIZED)
+    user = request.user
+    user_profile = user.userprofile
     
-    company = request.user.userprofile.company
+    # Получаем данные по отправлениям
+    shipments = Shipment.objects.filter(company=user_profile.company)
+    total_shipments = shipments.count()
+    shipments_by_status = shipments.values('status__code').annotate(count=Count('id'))
     
-    # Определяем временные рамки для анализа
-    today = datetime.date.today()
-    month_start = today.replace(day=1)
+    # Получаем данные по заявкам
+    requests = Request.objects.filter(company=user_profile.company)
+    total_requests = requests.count()
+    requests_by_status = requests.values('status__code').annotate(count=Count('id'))
     
-    # Статистика по отправкам
-    shipments_total = Shipment.objects.filter(company=company).count()
-    shipments_active = Shipment.objects.filter(
-        company=company, 
-        status__in=['at_warehouse', 'document_preparation', 'departed', 
-                    'border_crossing', 'customs_clearance', 'on_way_to_customs', 
-                    'on_way_to_warehouse', 'at_unloading_warehouse']
-    ).count()
-    shipments_completed = Shipment.objects.filter(company=company, status='done').count()
-    shipments_this_month = Shipment.objects.filter(
-        company=company, 
-        created_at__gte=month_start
-    ).count()
+    # Получаем финансовые данные
+    finances = Finance.objects.filter(company=user_profile.company)
+    total_revenue = finances.filter(operation_type='income').aggregate(total=Sum('amount'))['total'] or 0
+    total_expenses = finances.filter(operation_type='expense').aggregate(total=Sum('amount'))['total'] or 0
+    total_profit = total_revenue - total_expenses
     
-    # Статистика по заявкам
-    requests_total = Request.objects.filter(company=company).count()
-    requests_active = Request.objects.filter(
-        company=company,
-        status__in=['new', 'expected', 'on_warehouse', 'in_progress', 'ready']
-    ).count()
-    requests_completed = Request.objects.filter(company=company, status='delivered').count()
-    requests_this_month = Request.objects.filter(
-        company=company,
-        created_at__gte=month_start
-    ).count()
+    # Группируем по валютам
+    revenue_by_currency = finances.filter(operation_type='income').values('currency').annotate(total=Sum('amount'))
+    expenses_by_currency = finances.filter(operation_type='expense').values('currency').annotate(total=Sum('amount'))
     
-    # Финансовая статистика
-    income_this_month = Finance.objects.filter(
-        company=company,
-        operation_type='in',
-        payment_date__gte=month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-    
-    expenses_this_month = Finance.objects.filter(
-        company=company,
-        operation_type='out',
-        payment_date__gte=month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-    
-    # Статистика по статусам отправок
-    shipment_status_stats = {}
-    for status_code, status_name in dict(Shipment.SHIPMENT_STATUS_CHOICES).items():
-        count = Shipment.objects.filter(company=company, status=status_code).count()
-        shipment_status_stats[status_code] = {
-            'name': status_name,
-            'count': count
-        }
-    
-    # Статистика по статусам заявок
-    request_status_stats = {}
-    for status_code, status_name in dict(Request.REQUEST_STATUS_CHOICES).items():
-        count = Request.objects.filter(company=company, status=status_code).count()
-        request_status_stats[status_code] = {
-            'name': status_name,
-            'count': count
-        }
-    
-    # Формируем итоговый результат
-    result = {
-        'company': {
-            'id': company.id,
-            'name': company.name
-        },
-        'shipments': {
-            'total': shipments_total,
-            'active': shipments_active,
-            'completed': shipments_completed,
-            'this_month': shipments_this_month,
-            'status_stats': shipment_status_stats
-        },
-        'requests': {
-            'total': requests_total,
-            'active': requests_active,
-            'completed': requests_completed,
-            'this_month': requests_this_month,
-            'status_stats': request_status_stats
-        },
-        'finance': {
-            'this_month': {
-                'income': float(income_this_month),
-                'expenses': float(expenses_this_month),
-                'profit': float(income_this_month - expenses_this_month)
-            }
-        },
-        'timestamp': datetime.datetime.now().isoformat()
+    data = {
+        'total_shipments': total_shipments,
+        'total_requests': total_requests,
+        'total_revenue': total_revenue,
+        'total_expenses': total_expenses,
+        'total_profit': total_profit,
+        'shipments_by_status': {item['status__code']: item['count'] for item in shipments_by_status},
+        'requests_by_status': {item['status__code']: item['count'] for item in requests_by_status},
+        'revenue_by_currency': {item['currency']: item['total'] for item in revenue_by_currency},
+        'expenses_by_currency': {item['currency']: item['total'] for item in expenses_by_currency}
     }
     
-    return Response(result)
+    serializer = AnalyticsSummarySerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    return Response(serializer.data)
+
+
+class RequestStatusViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для управления статусами заявок.
+    Доступен только администраторам компании.
+    """
+    serializer_class = RequestStatusSerializer
+    permission_classes = [IsCompanyAdmin]
+    queryset = RequestStatus.objects.all()
+
+    def get_queryset(self):
+        """
+        Возвращает только статусы компании пользователя.
+        """
+        return RequestStatus.objects.filter(company=self.request.user.userprofile.company)
+
+    def perform_create(self, serializer):
+        """
+        При создании статуса автоматически устанавливает компанию пользователя.
+        """
+        serializer.save(company=self.request.user.userprofile.company)

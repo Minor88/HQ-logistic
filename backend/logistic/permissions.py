@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from .models import ShipmentStatus
 
 class IsSuperuser(permissions.BasePermission):
     """
@@ -27,30 +28,15 @@ class IsCompanyAdmin(permissions.BasePermission):
     но не могут видеть или изменять данные других компаний.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            hasattr(request.user, 'userprofile') and request.user.userprofile.user_group == 'admin'
-        )
+        return request.user.is_authenticated and request.user.userprofile.role == 'admin'
     
     def has_object_permission(self, request, view, obj):
         """
         Проверяет, принадлежит ли объект компании пользователя.
         """
-        # Проверяем, принадлежит ли объект компании пользователя
-        if not hasattr(request.user, 'userprofile'):
-            return False
-        
-        # Получаем компанию пользователя
-        user_company = request.user.userprofile.company
-        
-        # Проверяем, есть ли у объекта атрибут 'company'
-        if hasattr(obj, 'company'):
-            return obj.company == user_company
-        
-        # Если объект - это пользователь, проверяем его компанию
-        if hasattr(obj, 'userprofile') and hasattr(obj.userprofile, 'company'):
-            return obj.userprofile.company == user_company
-        
-        return False
+        if isinstance(obj, ShipmentStatus):
+            return obj.company == request.user.userprofile.company
+        return obj.company == request.user.userprofile.company
 
 class IsCompanyBoss(permissions.BasePermission):
     """
@@ -63,31 +49,15 @@ class IsCompanyBoss(permissions.BasePermission):
     включая управление финансами и аналитику.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            hasattr(request.user, 'userprofile') and 
-            request.user.userprofile.user_group in ['admin', 'boss']
-        )
+        return request.user.is_authenticated and request.user.userprofile.role == 'boss'
     
     def has_object_permission(self, request, view, obj):
         """
         Проверяет, принадлежит ли объект компании пользователя.
         """
-        # Проверяем, принадлежит ли объект компании пользователя
-        if not hasattr(request.user, 'userprofile'):
-            return False
-        
-        # Получаем компанию пользователя
-        user_company = request.user.userprofile.company
-        
-        # Проверяем, есть ли у объекта атрибут 'company'
-        if hasattr(obj, 'company'):
-            return obj.company == user_company
-        
-        # Если объект - это пользователь, проверяем его компанию
-        if hasattr(obj, 'userprofile') and hasattr(obj.userprofile, 'company'):
-            return obj.userprofile.company == user_company
-        
-        return False
+        if isinstance(obj, ShipmentStatus):
+            return obj.company == request.user.userprofile.company
+        return obj.company == request.user.userprofile.company
 
 class IsCompanyManager(permissions.BasePermission):
     """
@@ -100,31 +70,15 @@ class IsCompanyManager(permissions.BasePermission):
     но ограничены в доступе к финансовым и аналитическим данным.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            hasattr(request.user, 'userprofile') and 
-            request.user.userprofile.user_group in ['admin', 'boss', 'manager']
-        )
+        return request.user.is_authenticated and request.user.userprofile.role == 'manager'
     
     def has_object_permission(self, request, view, obj):
         """
         Проверяет, принадлежит ли объект компании пользователя.
         """
-        # Проверяем, принадлежит ли объект компании пользователя
-        if not hasattr(request.user, 'userprofile'):
-            return False
-        
-        # Получаем компанию пользователя
-        user_company = request.user.userprofile.company
-        
-        # Проверяем, есть ли у объекта атрибут 'company'
-        if hasattr(obj, 'company'):
-            return obj.company == user_company
-        
-        # Если объект - это пользователь, проверяем его компанию
-        if hasattr(obj, 'userprofile') and hasattr(obj.userprofile, 'company'):
-            return obj.userprofile.company == user_company
-        
-        return False
+        if isinstance(obj, ShipmentStatus):
+            return obj.company == request.user.userprofile.company
+        return obj.company == request.user.userprofile.company
 
 class IsCompanyWarehouse(permissions.BasePermission):
     """
@@ -137,31 +91,15 @@ class IsCompanyWarehouse(permissions.BasePermission):
     но ограничены в доступе к другим данным.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            hasattr(request.user, 'userprofile') and 
-            request.user.userprofile.user_group in ['admin', 'boss', 'manager', 'warehouse']
-        )
+        return request.user.is_authenticated and request.user.userprofile.role == 'warehouse'
     
     def has_object_permission(self, request, view, obj):
         """
         Проверяет, принадлежит ли объект компании пользователя.
         """
-        # Проверяем, принадлежит ли объект компании пользователя
-        if not hasattr(request.user, 'userprofile'):
-            return False
-        
-        # Получаем компанию пользователя
-        user_company = request.user.userprofile.company
-        
-        # Проверяем, есть ли у объекта атрибут 'company'
-        if hasattr(obj, 'company'):
-            return obj.company == user_company
-        
-        # Если объект - это пользователь, проверяем его компанию
-        if hasattr(obj, 'userprofile') and hasattr(obj.userprofile, 'company'):
-            return obj.userprofile.company == user_company
-        
-        return False
+        if isinstance(obj, ShipmentStatus):
+            return obj.company == request.user.userprofile.company
+        return obj.company == request.user.userprofile.company
 
 class IsCompanyClient(permissions.BasePermission):
     """
@@ -174,39 +112,16 @@ class IsCompanyClient(permissions.BasePermission):
     связанным с ними отправкам и финансовым операциям.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            hasattr(request.user, 'userprofile') and 
-            request.user.userprofile.user_group == 'client'
-        )
+        return request.user.is_authenticated and request.user.userprofile.role == 'client'
     
     def has_object_permission(self, request, view, obj):
         """
         Проверяет, имеет ли клиент доступ к объекту.
         Клиенты имеют доступ только к своим заявкам и связанным с ними данным.
         """
-        # Клиенты имеют доступ только к своим отправлениям, заявкам и финансам
-        if not hasattr(request.user, 'userprofile'):
-            return False
-        
-        # Получаем профиль пользователя
-        user_profile = request.user.userprofile
-        
-        # Проверяем, есть ли у объекта атрибут 'client'
-        if hasattr(obj, 'client'):
-            return obj.client == user_profile
-        
-        # Проверяем, есть ли у объекта связь с клиентом через заявку
-        if hasattr(obj, 'request') and hasattr(obj.request, 'client'):
-            return obj.request.client == user_profile
-        
-        # Проверяем, есть ли у объекта связь с клиентом через отправление и заявку
-        if hasattr(obj, 'shipment') and obj.shipment:
-            # Получаем все заявки этого отправления
-            requests = obj.shipment.request_set.all()
-            # Проверяем, есть ли среди них заявки этого клиента
-            return requests.filter(client=user_profile).exists()
-        
-        return False
+        if isinstance(obj, ShipmentStatus):
+            return obj.company == request.user.userprofile.company
+        return obj.company == request.user.userprofile.company
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """

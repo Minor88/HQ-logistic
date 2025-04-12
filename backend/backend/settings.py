@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'corsheaders',                    # Обработка Cross-Origin Resource Sharing
     'djoser',                         # Расширенная система аутентификации
     'logistic',                       # Основное приложение для логистики
+    'drf_spectacular',                # Спецификация API
+    'drf_spectacular_sidecar',        # Sidecar для спецификации API
 ]
 
 # Промежуточное ПО для обработки HTTP-запросов
@@ -180,6 +182,21 @@ REST_FRAMEWORK = {
         'djangorestframework_camel_case.parser.CamelCaseMultiPartParser',
         'djangorestframework_camel_case.parser.CamelCaseJSONParser',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'HQ Logistic API',
+    'DESCRIPTION': 'Документация для HQ Logistic API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
+    'CAMELIZE_NAMES': True,
 }
 
 # JWT Settings
