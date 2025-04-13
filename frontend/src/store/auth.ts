@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api } from '@/services/api';
+import api from '@/api';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -24,10 +24,24 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         try {
           set({ isLoading: true, error: null });
-          const { data } = await api.post('/auth/token/login/', { username, password });
-          set({ token: data.auth_token });
+          const { data } = await api.post('/auth/jwt/create/', 
+            new URLSearchParams({
+              username,
+              password
+            }), 
+            {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              withCredentials: true
+            }
+          );
+          set({ token: data.access });
+          localStorage.setItem('token', data.access);
+          localStorage.setItem('refresh', data.refresh);
           await useAuthStore.getState().getCurrentUser();
         } catch (error: any) {
+          console.error('Login error:', error);
           set({ error: error.response?.data?.message || 'Ошибка входа' });
         } finally {
           set({ isLoading: false });
@@ -36,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         api.post('/auth/token/logout/');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh');
         set({ token: null, user: null });
       },
 

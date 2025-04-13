@@ -1,0 +1,4819 @@
+openapi: 3.0.3
+info:
+  title: HQ Logistic API
+  version: 1.0.0
+  description: Документация для HQ Logistic API
+paths:
+  /api/analytics/summary/:
+    get:
+      operationId: analyticsSummaryRetrieve
+      tags:
+      - analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+          description: ''
+  /api/auth/jwt/create/:
+    post:
+      operationId: authJwtCreateCreate
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/jwt/refresh/:
+    post:
+      operationId: authJwtRefreshCreate
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/jwt/verify/:
+    post:
+      operationId: authJwtVerifyCreate
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/auth/users/:
+    get:
+      operationId: authUsersList
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: authUsersCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+          description: ''
+  /api/auth/users/{id}/:
+    get:
+      operationId: authUsersRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this пользователь.
+        required: true
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: authUsersUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this пользователь.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: authUsersPartialUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this пользователь.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: authUsersDestroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this пользователь.
+        required: true
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/users/activation/:
+    post:
+      operationId: authUsersActivationCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+          description: ''
+  /api/auth/users/me/:
+    get:
+      operationId: authUsersMeRetrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: authUsersMeUpdate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: authUsersMePartialUpdate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: authUsersMeDestroy
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/users/resend_activation/:
+    post:
+      operationId: authUsersResendActivationCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_password/:
+    post:
+      operationId: authUsersResetPasswordCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_password_confirm/:
+    post:
+      operationId: authUsersResetPasswordConfirmCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetConfirm'
+          description: ''
+  /api/auth/users/reset_username/:
+    post:
+      operationId: authUsersResetUsernameCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_username_confirm/:
+    post:
+      operationId: authUsersResetUsernameConfirmCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameResetConfirm'
+          description: ''
+  /api/auth/users/set_password/:
+    post:
+      operationId: authUsersSetPasswordCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetPassword'
+          description: ''
+  /api/auth/users/set_username/:
+    post:
+      operationId: authUsersSetUsernameCreate
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUsername'
+          description: ''
+  /api/companies/:
+    get:
+      operationId: companiesList
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompanyList'
+          description: ''
+    post:
+      operationId: companiesCreate
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+  /api/companies/{id}/:
+    get:
+      operationId: companiesRetrieve
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+    put:
+      operationId: companiesUpdate
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+    patch:
+      operationId: companiesPartialUpdate
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+    delete:
+      operationId: companiesDestroy
+      description: |-
+        ViewSet для управления компаниями.
+
+        Обеспечивает стандартные CRUD-операции для модели Company.
+        Доступен только для суперпользователей и администраторов компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/email/send/:
+    post:
+      operationId: emailSendCreate
+      tags:
+      - email
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+          description: ''
+  /api/finance/:
+    get:
+      operationId: financeList
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - finance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinanceListList'
+          description: ''
+    post:
+      operationId: financeCreate
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceList'
+          description: ''
+  /api/finance/{number}/:
+    get:
+      operationId: financeRetrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDetail'
+          description: ''
+    put:
+      operationId: financeUpdate
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinanceDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinanceDetailRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDetail'
+          description: ''
+    patch:
+      operationId: financePartialUpdate
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFinanceDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFinanceDetailRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFinanceDetailRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceDetail'
+          description: ''
+    delete:
+      operationId: financeDestroy
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/balance/:
+    get:
+      operationId: financeBalanceRetrieve
+      tags:
+      - finance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+          description: ''
+  /api/finance/counterparty-balance/:
+    get:
+      operationId: financeCounterpartyBalanceRetrieve
+      tags:
+      - finance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CounterpartyBalance'
+          description: ''
+  /api/request-statuses/:
+    get:
+      operationId: requestStatusesList
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - request-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRequestStatusList'
+          description: ''
+    post:
+      operationId: requestStatusesCreate
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      tags:
+      - request-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestStatus'
+          description: ''
+  /api/request-statuses/{id}/:
+    get:
+      operationId: requestStatusesRetrieve
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус заявки.
+        required: true
+      tags:
+      - request-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestStatus'
+          description: ''
+    put:
+      operationId: requestStatusesUpdate
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус заявки.
+        required: true
+      tags:
+      - request-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestStatusRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestStatus'
+          description: ''
+    patch:
+      operationId: requestStatusesPartialUpdate
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус заявки.
+        required: true
+      tags:
+      - request-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestStatusRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestStatus'
+          description: ''
+    delete:
+      operationId: requestStatusesDestroy
+      description: |-
+        ViewSet для управления статусами заявок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус заявки.
+        required: true
+      tags:
+      - request-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/requests/:
+    get:
+      operationId: requestsList
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRequestListList'
+          description: ''
+    post:
+      operationId: requestsCreate
+      tags:
+      - requests
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+  /api/requests/{id}/:
+    get:
+      operationId: requestsRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+          description: ''
+    put:
+      operationId: requestsUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+    patch:
+      operationId: requestsPartialUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRequestListRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+    delete:
+      operationId: requestsDestroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/requests/{id}/download-all-files/:
+    get:
+      operationId: requestsDownloadAllFilesRetrieve
+      description: |-
+        Скачивает все файлы заявки.
+
+        Возвращает все файлы заявки для скачивания.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+  /api/requests/{id}/download-file/{fileId}/:
+    get:
+      operationId: requestsDownloadFileRetrieve
+      description: |-
+        Скачивает конкретный файл заявки.
+
+        Возвращает конкретный файл заявки для скачивания.
+      parameters:
+      - in: path
+        name: fileId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+  /api/requests/{id}/files/{fileId}/:
+    delete:
+      operationId: requestsFilesDestroy
+      description: Удаление файла заявки.
+      parameters:
+      - in: path
+        name: fileId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/requests/{id}/request_upload_files/:
+    post:
+      operationId: requestsRequestUploadFilesCreate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
+  /api/shipment-calculations/:
+    get:
+      operationId: shipmentCalculationsList
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentCalculationList'
+          description: ''
+    post:
+      operationId: shipmentCalculationsCreate
+      tags:
+      - shipment-calculations
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+  /api/shipment-calculations/{id}/:
+    get:
+      operationId: shipmentCalculationsRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+    put:
+      operationId: shipmentCalculationsUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+    patch:
+      operationId: shipmentCalculationsPartialUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentCalculationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentCalculationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentCalculationRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+    delete:
+      operationId: shipmentCalculationsDestroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shipment-calculations/{id}/calculate-costs/:
+    post:
+      operationId: shipmentCalculationsCalculateCostsCreate
+      description: Расчет затрат на основе курсов валют и связанных заявок.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentCalculationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+  /api/shipment-calculations/{id}/calculation_related_requests/:
+    get:
+      operationId: shipmentCalculationsCalculationRelatedRequestsRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+  /api/shipment-calculations/{id}/expenses/:
+    get:
+      operationId: shipmentCalculationsExpensesRetrieve
+      description: Получить финансовые операции (расходы) для отправления
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Расчет отправки.
+        required: true
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+  /api/shipment-calculations/by-shipment/{shipmentId}/:
+    get:
+      operationId: shipmentCalculationsByShipmentRetrieve
+      parameters:
+      - in: path
+        name: shipmentId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - shipment-calculations
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentCalculation'
+          description: ''
+  /api/shipment-statuses/:
+    get:
+      operationId: shipmentStatusesList
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - shipment-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentStatusList'
+          description: ''
+    post:
+      operationId: shipmentStatusesCreate
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      tags:
+      - shipment-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentStatus'
+          description: ''
+  /api/shipment-statuses/{id}/:
+    get:
+      operationId: shipmentStatusesRetrieve
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус отправки.
+        required: true
+      tags:
+      - shipment-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentStatus'
+          description: ''
+    put:
+      operationId: shipmentStatusesUpdate
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус отправки.
+        required: true
+      tags:
+      - shipment-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentStatusRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentStatus'
+          description: ''
+    patch:
+      operationId: shipmentStatusesPartialUpdate
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус отправки.
+        required: true
+      tags:
+      - shipment-statuses
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentStatusRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentStatusRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentStatus'
+          description: ''
+    delete:
+      operationId: shipmentStatusesDestroy
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус отправки.
+        required: true
+      tags:
+      - shipment-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shipment-statuses/available_statuses/:
+    get:
+      operationId: shipmentStatusesAvailableStatusesRetrieve
+      description: |-
+        ViewSet для управления статусами отправок.
+        Доступен только администраторам компании.
+      tags:
+      - shipment-statuses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentStatus'
+          description: ''
+  /api/shipments/:
+    get:
+      operationId: shipmentsList
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentListList'
+          description: ''
+    post:
+      operationId: shipmentsCreate
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      tags:
+      - shipments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/shipments/{id}/:
+    get:
+      operationId: shipmentsRetrieve
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentDetail'
+          description: ''
+    put:
+      operationId: shipmentsUpdate
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+    patch:
+      operationId: shipmentsPartialUpdate
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentListRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+    delete:
+      operationId: shipmentsDestroy
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shipments/{id}/create-folder/:
+    post:
+      operationId: shipmentsCreateFolderCreate
+      description: Создает новую папку для отправки.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/shipments/{id}/download-all-files/:
+    get:
+      operationId: shipmentsDownloadAllFilesRetrieve
+      description: |-
+        Скачивает все файлы отправки.
+
+        Возвращает все файлы отправки как вложения для скачивания.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/shipments/{id}/download-file/{fileId}/:
+    get:
+      operationId: shipmentsDownloadFileRetrieve
+      description: |-
+        Скачивает конкретный файл отправки.
+
+        Возвращает конкретный файл отправки для скачивания.
+      parameters:
+      - in: path
+        name: fileId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/shipments/{id}/files/:
+    get:
+      operationId: shipmentsFilesRetrieve
+      description: |-
+        ViewSet для управления отправками.
+
+        Обеспечивает стандартные CRUD-операции для модели Shipment,
+        а также дополнительные методы для работы с файлами и папками.
+        Доступен для менеджеров компаний и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/shipments/{id}/files/{fileId}/:
+    delete:
+      operationId: shipmentsFilesDestroy
+      description: Удаляет файл отправки из базы данных и файловой системы.
+      parameters:
+      - in: path
+        name: fileId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shipments/{id}/folders/{folderId}/:
+    delete:
+      operationId: shipmentsFoldersDestroy
+      description: Удаление папки и всех связанных файлов
+      parameters:
+      - in: path
+        name: folderId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/shipments/{id}/upload_files/:
+    post:
+      operationId: shipmentsUploadFilesCreate
+      description: |-
+        Загружает файлы для отправки.
+
+        Файлы могут быть загружены в корень или в конкретную папку отправки.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
+  /api/token/:
+    post:
+      operationId: tokenCreate
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: tokenRefreshCreate
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/user-profiles/:
+    get:
+      operationId: userProfilesList
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - user-profiles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserProfileList'
+          description: ''
+    post:
+      operationId: userProfilesCreate
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      tags:
+      - user-profiles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/user-profiles/{id}/:
+    get:
+      operationId: userProfilesRetrieve
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Профиль пользователя.
+        required: true
+      tags:
+      - user-profiles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    put:
+      operationId: userProfilesUpdate
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Профиль пользователя.
+        required: true
+      tags:
+      - user-profiles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: userProfilesPartialUpdate
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Профиль пользователя.
+        required: true
+      tags:
+      - user-profiles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    delete:
+      operationId: userProfilesDestroy
+      description: |-
+        ViewSet для управления профилями пользователей.
+
+        Обеспечивает стандартные CRUD-операции для модели UserProfile.
+        Доступен только для администраторов и руководителей компаний.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Профиль пользователя.
+        required: true
+      tags:
+      - user-profiles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/user-profiles/clients/:
+    get:
+      operationId: userProfilesClientsRetrieve
+      description: |-
+        Возвращает список только тех пользователей, которые имеют роль 'client'.
+
+        Используется для получения списка клиентов компании.
+      tags:
+      - user-profiles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+components:
+  schemas:
+    Activation:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+      required:
+      - token
+      - uid
+    ActivationRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+      - uid
+    AnalyticsSummary:
+      type: object
+      properties:
+        total_shipments:
+          type: integer
+        total_requests:
+          type: integer
+        total_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_expenses:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipments_by_status:
+          type: object
+          additionalProperties:
+            type: integer
+        requests_by_status:
+          type: object
+          additionalProperties:
+            type: integer
+        revenue_by_currency:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        expenses_by_currency:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+      - expenses_by_currency
+      - requests_by_status
+      - revenue_by_currency
+      - shipments_by_status
+      - total_expenses
+      - total_profit
+      - total_requests
+      - total_revenue
+      - total_shipments
+    Balance:
+      type: object
+      description: Сериализатор для баланса компании.
+      properties:
+        income:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Доходы по валютам
+        expenses:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Расходы по валютам
+        balance:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Баланс по валютам
+      required:
+      - balance
+      - expenses
+      - income
+    Company:
+      type: object
+      description: |-
+        Сериализатор для модели компании.
+        Предоставляет все поля модели Company.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название компании
+          maxLength: 255
+        address:
+          type: string
+          nullable: true
+          title: Адрес
+        phone:
+          type: string
+          nullable: true
+          title: Телефон
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+      required:
+      - created_at
+      - id
+      - name
+    CompanyRequest:
+      type: object
+      description: |-
+        Сериализатор для модели компании.
+        Предоставляет все поля модели Company.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название компании
+          maxLength: 255
+        address:
+          type: string
+          nullable: true
+          title: Адрес
+        phone:
+          type: string
+          nullable: true
+          title: Телефон
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+      required:
+      - name
+    CounterpartyBalance:
+      type: object
+      description: Сериализатор для баланса контрагентов.
+      properties:
+        id:
+          type: integer
+          description: ID контрагента
+        name:
+          type: string
+          description: Название контрагента
+        balances:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Балансы по валютам
+      required:
+      - balances
+      - id
+      - name
+    CurrencyEnum:
+      enum:
+      - rub
+      - rubbn
+      - rubnds
+      - eur
+      - usd
+      type: string
+      description: |-
+        * `rub` - Рубль
+        * `rubbn` - Безнал
+        * `rubnds` - НДС
+        * `eur` - Евро
+        * `usd` - Доллар
+    DocumentTypeEnum:
+      enum:
+      - bill
+      - payment
+      type: string
+      description: |-
+        * `bill` - Счёт
+        * `payment` - Оплата
+    Email:
+      type: object
+      description: Сериализатор для отправки email.
+      properties:
+        sender_email:
+          type: string
+          format: email
+          description: Email отправителя
+        sender_name:
+          type: string
+          default: Логистическая компания
+          description: Имя отправителя
+        recipient_email:
+          type: string
+          format: email
+          description: Email получателя
+        subject:
+          type: string
+          default: Уведомление от логистической компании
+          description: Тема письма
+        message_plain:
+          type: string
+          default: ''
+          description: Текстовое сообщение
+        message_html:
+          type: string
+          default: ''
+          description: HTML сообщение
+      required:
+      - recipient_email
+      - sender_email
+    EmailRequest:
+      type: object
+      description: Сериализатор для отправки email.
+      properties:
+        sender_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Email отправителя
+        sender_name:
+          type: string
+          minLength: 1
+          default: Логистическая компания
+          description: Имя отправителя
+        recipient_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Email получателя
+        subject:
+          type: string
+          minLength: 1
+          default: Уведомление от логистической компании
+          description: Тема письма
+        message_plain:
+          type: string
+          minLength: 1
+          default: ''
+          description: Текстовое сообщение
+        message_html:
+          type: string
+          minLength: 1
+          default: ''
+          description: HTML сообщение
+      required:
+      - recipient_email
+      - sender_email
+    FinanceDetail:
+      type: object
+      description: |-
+        Расширенный сериализатор для детального отображения финансовой операции.
+        Наследует все поля от FinanceListSerializer и добавляет дополнительные
+        поля для детального отображения, включая информацию о связанной финансовой операции (основании).
+      properties:
+        number:
+          type: integer
+          readOnly: true
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        operation_type:
+          allOf:
+          - $ref: '#/components/schemas/OperationTypeEnum'
+          title: Тип операции
+        operation_type_display:
+          type: string
+          readOnly: true
+        payment_date:
+          type: string
+          format: date
+          title: Дата оплаты
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          title: Тип документа
+        document_type_display:
+          type: string
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          title: Валюта
+        currency_display:
+          type: string
+          readOnly: true
+        counterparty:
+          type: integer
+          nullable: true
+          title: Контрагент
+        counterparty_name:
+          type: string
+          readOnly: true
+        article:
+          type: integer
+          nullable: true
+          title: Статья
+        article_name:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Сумма
+        is_paid:
+          type: boolean
+          title: Оплачен
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправление
+        shipment_number:
+          type: string
+          readOnly: true
+        request:
+          type: integer
+          nullable: true
+          title: Заявка
+        request_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        created_by_name:
+          type: string
+          readOnly: true
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+        basis:
+          type: integer
+          nullable: true
+          title: Основание
+        basis_number:
+          type: integer
+          readOnly: true
+      required:
+      - article_name
+      - basis_number
+      - company
+      - company_name
+      - counterparty_name
+      - created_at
+      - created_by_name
+      - currency
+      - currency_display
+      - document_type
+      - document_type_display
+      - number
+      - operation_type
+      - operation_type_display
+      - payment_date
+      - request_number
+      - shipment_number
+    FinanceDetailRequest:
+      type: object
+      description: |-
+        Расширенный сериализатор для детального отображения финансовой операции.
+        Наследует все поля от FinanceListSerializer и добавляет дополнительные
+        поля для детального отображения, включая информацию о связанной финансовой операции (основании).
+      properties:
+        company:
+          type: integer
+          title: Компания
+        operation_type:
+          allOf:
+          - $ref: '#/components/schemas/OperationTypeEnum'
+          title: Тип операции
+        payment_date:
+          type: string
+          format: date
+          title: Дата оплаты
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          title: Тип документа
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          title: Валюта
+        counterparty:
+          type: integer
+          nullable: true
+          title: Контрагент
+        article:
+          type: integer
+          nullable: true
+          title: Статья
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Сумма
+        is_paid:
+          type: boolean
+          title: Оплачен
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправление
+        request:
+          type: integer
+          nullable: true
+          title: Заявка
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+        basis:
+          type: integer
+          nullable: true
+          title: Основание
+      required:
+      - company
+      - currency
+      - document_type
+      - operation_type
+      - payment_date
+    FinanceList:
+      type: object
+      description: |-
+        Сериализатор для списка финансовых операций.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов и текстовых значений выборов.
+      properties:
+        number:
+          type: integer
+          readOnly: true
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        operation_type:
+          allOf:
+          - $ref: '#/components/schemas/OperationTypeEnum'
+          title: Тип операции
+        operation_type_display:
+          type: string
+          readOnly: true
+        payment_date:
+          type: string
+          format: date
+          title: Дата оплаты
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          title: Тип документа
+        document_type_display:
+          type: string
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          title: Валюта
+        currency_display:
+          type: string
+          readOnly: true
+        counterparty:
+          type: integer
+          nullable: true
+          title: Контрагент
+        counterparty_name:
+          type: string
+          readOnly: true
+        article:
+          type: integer
+          nullable: true
+          title: Статья
+        article_name:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Сумма
+        is_paid:
+          type: boolean
+          title: Оплачен
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправление
+        shipment_number:
+          type: string
+          readOnly: true
+        request:
+          type: integer
+          nullable: true
+          title: Заявка
+        request_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        created_by_name:
+          type: string
+          readOnly: true
+      required:
+      - article_name
+      - company
+      - company_name
+      - counterparty_name
+      - created_at
+      - created_by_name
+      - currency
+      - currency_display
+      - document_type
+      - document_type_display
+      - number
+      - operation_type
+      - operation_type_display
+      - payment_date
+      - request_number
+      - shipment_number
+    FinanceListRequest:
+      type: object
+      description: |-
+        Сериализатор для списка финансовых операций.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов и текстовых значений выборов.
+      properties:
+        company:
+          type: integer
+          title: Компания
+        operation_type:
+          allOf:
+          - $ref: '#/components/schemas/OperationTypeEnum'
+          title: Тип операции
+        payment_date:
+          type: string
+          format: date
+          title: Дата оплаты
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          title: Тип документа
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          title: Валюта
+        counterparty:
+          type: integer
+          nullable: true
+          title: Контрагент
+        article:
+          type: integer
+          nullable: true
+          title: Статья
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Сумма
+        is_paid:
+          type: boolean
+          title: Оплачен
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправление
+        request:
+          type: integer
+          nullable: true
+          title: Заявка
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+      required:
+      - company
+      - currency
+      - document_type
+      - operation_type
+      - payment_date
+    OperationTypeEnum:
+      enum:
+      - in
+      - out
+      type: string
+      description: |-
+        * `in` - Входящий
+        * `out` - Исходящий
+    PaginatedCompanyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Company'
+    PaginatedFinanceListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceList'
+    PaginatedRequestListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestList'
+    PaginatedRequestStatusList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestStatus'
+    PaginatedShipmentCalculationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentCalculation'
+    PaginatedShipmentListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentList'
+    PaginatedShipmentStatusList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentStatus'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PaginatedUserProfileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        new_password:
+          type: string
+      required:
+      - new_password
+      - token
+      - uid
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - token
+      - uid
+    PatchedCompanyRequest:
+      type: object
+      description: |-
+        Сериализатор для модели компании.
+        Предоставляет все поля модели Company.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название компании
+          maxLength: 255
+        address:
+          type: string
+          nullable: true
+          title: Адрес
+        phone:
+          type: string
+          nullable: true
+          title: Телефон
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+    PatchedFinanceDetailRequest:
+      type: object
+      description: |-
+        Расширенный сериализатор для детального отображения финансовой операции.
+        Наследует все поля от FinanceListSerializer и добавляет дополнительные
+        поля для детального отображения, включая информацию о связанной финансовой операции (основании).
+      properties:
+        company:
+          type: integer
+          title: Компания
+        operation_type:
+          allOf:
+          - $ref: '#/components/schemas/OperationTypeEnum'
+          title: Тип операции
+        payment_date:
+          type: string
+          format: date
+          title: Дата оплаты
+        document_type:
+          allOf:
+          - $ref: '#/components/schemas/DocumentTypeEnum'
+          title: Тип документа
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          title: Валюта
+        counterparty:
+          type: integer
+          nullable: true
+          title: Контрагент
+        article:
+          type: integer
+          nullable: true
+          title: Статья
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Сумма
+        is_paid:
+          type: boolean
+          title: Оплачен
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправление
+        request:
+          type: integer
+          nullable: true
+          title: Заявка
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+        basis:
+          type: integer
+          nullable: true
+          title: Основание
+    PatchedRequestListRequest:
+      type: object
+      description: |-
+        Сериализатор для списка заявок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        company:
+          type: integer
+          title: Компания
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        status:
+          type: integer
+          title: Статус
+        client:
+          type: integer
+          title: Клиент
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+    PatchedRequestStatusRequest:
+      type: object
+      description: Сериализатор для статусов заявок.
+      properties:
+        code:
+          type: string
+          minLength: 1
+          title: Код статуса
+          maxLength: 20
+        name:
+          type: string
+          minLength: 1
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+    PatchedShipmentCalculationRequest:
+      type: object
+      description: |-
+        Сериализатор для расчетов отправок.
+        Предоставляет все поля модели ShipmentCalculation.
+      properties:
+        euro_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Евро
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Доллара
+        shipment:
+          type: integer
+          title: Отправка
+    PatchedShipmentListRequest:
+      type: object
+      description: |-
+        Сериализатор для списка отправок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов и вычисляемых значений.
+      properties:
+        number:
+          type: string
+          minLength: 1
+          title: Номер
+          maxLength: 50
+        company:
+          type: integer
+          title: Компания
+        status:
+          type: integer
+          title: Статус
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+    PatchedShipmentStatusRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          title: Код статуса
+          maxLength: 50
+        name:
+          type: string
+          minLength: 1
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+    PatchedUserProfileRequest:
+      type: object
+      description: Сериализатор для модели UserProfile.
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfileUserRequest'
+    PatchedUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Адрес электронной почты
+          maxLength: 254
+    RequestDetail:
+      type: object
+      description: |-
+        Расширенный сериализатор для детального отображения заявки.
+        Наследует все поля от RequestListSerializer и добавляет дополнительные
+        поля для детального отображения, включая связанные файлы.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        status:
+          type: integer
+          title: Статус
+        status_display:
+          type: string
+          readOnly: true
+        client:
+          type: integer
+          title: Клиент
+        client_name:
+          type: string
+          readOnly: true
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        manager_name:
+          type: string
+          readOnly: true
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+        shipment_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        rate:
+          type: string
+          nullable: true
+          title: Ставка
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestFile'
+          readOnly: true
+      required:
+      - client
+      - client_name
+      - company
+      - company_name
+      - created_at
+      - files
+      - id
+      - manager_name
+      - shipment_number
+      - status
+      - status_display
+    RequestFile:
+      type: object
+      description: |-
+        Сериализатор для файлов заявок.
+        Включает дополнительное поле для отображения имени загрузившего пользователя.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          title: Файл
+          maxLength: 255
+        uploaded_by:
+          type: integer
+          nullable: true
+          title: Загрузил
+        uploaded_by_name:
+          type: string
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата загрузки
+      required:
+      - file
+      - id
+      - uploaded_at
+      - uploaded_by_name
+    RequestList:
+      type: object
+      description: |-
+        Сериализатор для списка заявок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        status:
+          type: integer
+          title: Статус
+        status_display:
+          type: string
+          readOnly: true
+        client:
+          type: integer
+          title: Клиент
+        client_name:
+          type: string
+          readOnly: true
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        manager_name:
+          type: string
+          readOnly: true
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+        shipment_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+      required:
+      - client
+      - client_name
+      - company
+      - company_name
+      - created_at
+      - id
+      - manager_name
+      - shipment_number
+      - status
+      - status_display
+    RequestListRequest:
+      type: object
+      description: |-
+        Сериализатор для списка заявок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        company:
+          type: integer
+          title: Компания
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        status:
+          type: integer
+          title: Статус
+        client:
+          type: integer
+          title: Клиент
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+      required:
+      - client
+      - company
+      - status
+    RequestStatus:
+      type: object
+      description: Сериализатор для статусов заявок.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          title: Код статуса
+          maxLength: 20
+        name:
+          type: string
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - code
+      - id
+      - name
+    RequestStatusRequest:
+      type: object
+      description: Сериализатор для статусов заявок.
+      properties:
+        code:
+          type: string
+          minLength: 1
+          title: Код статуса
+          maxLength: 20
+        name:
+          type: string
+          minLength: 1
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - code
+      - name
+    SendEmailReset:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    SendEmailResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    SetPassword:
+      type: object
+      properties:
+        new_password:
+          type: string
+        current_password:
+          type: string
+      required:
+      - current_password
+      - new_password
+    SetPasswordRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+          minLength: 1
+        current_password:
+          type: string
+          minLength: 1
+      required:
+      - current_password
+      - new_password
+    SetUsername:
+      type: object
+      properties:
+        current_password:
+          type: string
+        new_username:
+          type: string
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - current_password
+      - new_username
+    SetUsernameRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          minLength: 1
+        new_username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - current_password
+      - new_username
+    ShipmentCalculation:
+      type: object
+      description: |-
+        Сериализатор для расчетов отправок.
+        Предоставляет все поля модели ShipmentCalculation.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        euro_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Евро
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Доллара
+        shipment:
+          type: integer
+          title: Отправка
+      required:
+      - id
+      - shipment
+    ShipmentCalculationRequest:
+      type: object
+      description: |-
+        Сериализатор для расчетов отправок.
+        Предоставляет все поля модели ShipmentCalculation.
+      properties:
+        euro_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Евро
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Курс Доллара
+        shipment:
+          type: integer
+          title: Отправка
+      required:
+      - shipment
+    ShipmentDetail:
+      type: object
+      description: |-
+        Расширенный сериализатор для детального отображения отправки.
+        Наследует все поля от ShipmentListSerializer и добавляет дополнительные
+        поля для детального отображения, включая связанные папки, файлы, заявки и расчеты.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          title: Номер
+          maxLength: 50
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        status:
+          type: integer
+          title: Статус
+        status_code:
+          type: string
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        created_by_name:
+          type: string
+          readOnly: true
+        requests_count:
+          type: integer
+          description: Вычисляет количество заявок, связанных с отправкой.
+          readOnly: true
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentFolder'
+          readOnly: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentFile'
+          readOnly: true
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestList'
+          readOnly: true
+        calculation:
+          allOf:
+          - $ref: '#/components/schemas/ShipmentCalculation'
+          readOnly: true
+      required:
+      - calculation
+      - company
+      - company_name
+      - created_at
+      - created_by_name
+      - files
+      - folders
+      - id
+      - number
+      - requests
+      - requests_count
+      - status
+      - status_code
+      - status_display
+    ShipmentFile:
+      type: object
+      description: |-
+        Сериализатор для файлов отправок.
+        Включает дополнительные поля для отображения имени папки и загрузившего пользователя.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          title: Файл
+          maxLength: 255
+        folder:
+          type: integer
+          nullable: true
+          title: Папка
+        folder_name:
+          type: string
+          readOnly: true
+        uploaded_by:
+          type: integer
+          nullable: true
+          title: Загрузил
+        uploaded_by_name:
+          type: string
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата загрузки
+      required:
+      - file
+      - folder_name
+      - id
+      - uploaded_at
+      - uploaded_by_name
+    ShipmentFolder:
+      type: object
+      description: |-
+        Сериализатор для папок отправок.
+        Включает дополнительное поле для отображения имени создавшего пользователя.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название папки
+          maxLength: 255
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        created_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+      required:
+      - created_at
+      - created_by_name
+      - id
+      - name
+    ShipmentList:
+      type: object
+      description: |-
+        Сериализатор для списка отправок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов и вычисляемых значений.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          title: Номер
+          maxLength: 50
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        status:
+          type: integer
+          title: Статус
+        status_code:
+          type: string
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+        created_by_name:
+          type: string
+          readOnly: true
+        requests_count:
+          type: integer
+          description: Вычисляет количество заявок, связанных с отправкой.
+          readOnly: true
+      required:
+      - company
+      - company_name
+      - created_at
+      - created_by_name
+      - id
+      - number
+      - requests_count
+      - status
+      - status_code
+      - status_display
+    ShipmentListRequest:
+      type: object
+      description: |-
+        Сериализатор для списка отправок.
+        Включает основные поля для отображения в списке и дополнительные поля
+        для отображения связанных объектов и вычисляемых значений.
+      properties:
+        number:
+          type: string
+          minLength: 1
+          title: Номер
+          maxLength: 50
+        company:
+          type: integer
+          title: Компания
+        status:
+          type: integer
+          title: Статус
+        created_by:
+          type: integer
+          nullable: true
+          title: Создал
+      required:
+      - company
+      - number
+      - status
+    ShipmentStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          title: Код статуса
+          maxLength: 50
+        name:
+          type: string
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - code
+      - id
+      - name
+    ShipmentStatusRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          title: Код статуса
+          maxLength: 50
+        name:
+          type: string
+          minLength: 1
+          title: Название статуса
+          maxLength: 100
+        is_default:
+          type: boolean
+          title: Статус по умолчанию
+        is_final:
+          type: boolean
+          title: Финальный статус
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - code
+      - name
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - token
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Адрес электронной почты
+          maxLength: 254
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+      required:
+      - id
+      - username
+    UserCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Адрес электронной почты
+          maxLength: 254
+        username:
+          type: string
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        id:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - username
+    UserCreateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Адрес электронной почты
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    UserGroupEnum:
+      enum:
+      - superuser
+      - admin
+      - boss
+      - manager
+      - warehouse
+      - client
+      type: string
+      description: |-
+        * `superuser` - Суперпользователь
+        * `admin` - Администратор
+        * `boss` - Руководитель
+        * `manager` - Менеджер
+        * `warehouse` - Склад
+        * `client` - Клиент
+    UserProfile:
+      type: object
+      description: Сериализатор для модели UserProfile.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          $ref: '#/components/schemas/UserProfileUser'
+        company:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+        user_group:
+          allOf:
+          - $ref: '#/components/schemas/UserGroupEnum'
+          readOnly: true
+          title: Группа пользователя
+        role_display:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Телефон
+      required:
+      - company
+      - company_name
+      - id
+      - phone
+      - role_display
+      - user
+      - user_group
+    UserProfileRequest:
+      type: object
+      description: Сериализатор для модели UserProfile.
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfileUserRequest'
+      required:
+      - user
+    UserProfileUser:
+      type: object
+      description: |-
+        Сериализатор для модели User.
+        Используется в UserProfileSerializer.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Адрес электронной почты
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+      required:
+      - email
+      - id
+      - username
+    UserProfileUserRequest:
+      type: object
+      description: |-
+        Сериализатор для модели User.
+        Используется в UserProfileSerializer.
+      properties:
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+    UserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Адрес электронной почты
+          maxLength: 254
+    UsernameResetConfirm:
+      type: object
+      properties:
+        new_username:
+          type: string
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - new_username
+    UsernameResetConfirmRequest:
+      type: object
+      properties:
+        new_username:
+          type: string
+          minLength: 1
+          title: Имя пользователя
+          description: Обязательное поле. Не более 150 символов. Только буквы, цифры
+            и символы @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - new_username
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

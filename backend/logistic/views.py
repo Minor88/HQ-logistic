@@ -33,6 +33,7 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 from rest_framework.schemas import AutoSchema
+from rest_framework import permissions
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -40,17 +41,32 @@ class CompanyViewSet(viewsets.ModelViewSet):
     ViewSet для управления компаниями.
     
     Обеспечивает стандартные CRUD-операции для модели Company.
-    Доступен только для суперпользователей и администраторов компаний.
+    Доступен только для суперпользователей для создания/удаления.
+    Администраторы могут только просматривать свою компанию.
     """
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [IsSuperuser | IsCompanyAdmin]
+    
+    def get_permissions(self):
+        """
+        Переопределяем для обработки разных типов запросов.
+        
+        Для любых изменений (создание, редактирование, удаление) - только суперпользователи.
+        Для просмотра - суперпользователи и администраторы (админы видят только свою компанию).
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Для модификации данных - только суперпользователи
+            return [IsSuperuser()]
+        
+        # Для просмотра - суперпользователи и администраторы
+        return [IsSuperuser(), IsCompanyAdmin()]
     
     def get_queryset(self):
         """
         Переопределяет queryset в зависимости от роли пользователя.
         
         Суперпользователи видят все компании, администраторы - только свою.
+        Остальные пользователи не видят компании.
         """
         # Суперпользователи видят все компании
         if self.request.user.is_superuser or (hasattr(self.request.user, 'userprofile') and 
@@ -58,9 +74,10 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return Company.objects.all()
         
         # Администраторы видят только свою компанию
-        if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.company:
+        if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.user_group == 'admin' and self.request.user.userprofile.company:
             return Company.objects.filter(id=self.request.user.userprofile.company.id)
         
+        # Остальные пользователи не видят компании
         return Company.objects.none()
 
     def perform_create(self, serializer):
@@ -109,7 +126,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsCompanyAdmin | IsCompanyBoss]
+    permission_classes = [IsSuperuser, IsCompanyAdmin, IsCompanyBoss]
     
     def get_queryset(self):
         """
@@ -486,7 +503,7 @@ class ShipmentViewSet(viewsets.ModelViewSet):
 
 class RequestViewSet(viewsets.ModelViewSet):
     queryset = Request.objects.all().order_by('-created_at')
-    permission_classes = [IsCompanyManager | IsCompanyClient]
+    permission_classes = [IsCompanyManager, IsCompanyClient]
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -502,16 +519,16 @@ class RequestViewSet(viewsets.ModelViewSet):
             return Request.objects.all()
         
         user_profile = user.userprofile
-        if user_profile.role == 'admin':
+        if user_profile.user_group == 'admin':
             return Request.objects.filter(client__company=user_profile.company)
-        elif user_profile.role == 'boss':
+        elif user_profile.user_group == 'boss':
             return Request.objects.filter(client__company=user_profile.company)
-        elif user_profile.role == 'manager':
+        elif user_profile.user_group == 'manager':
             return Request.objects.filter(
                 Q(client__company=user_profile.company) &
                 (Q(manager=user_profile) | Q(manager__isnull=True))
             )
-        elif user_profile.role == 'warehouse':
+        elif user_profile.user_group == 'warehouse':
             return Request.objects.filter(
                 Q(client__company=user_profile.company) &
                 Q(status__code__in=['on_warehouse', 'ready'])
@@ -803,7 +820,7 @@ class EmailView(generics.GenericAPIView):
             msg['Subject'] = data['subject']
             msg['From'] = f"{data['sender_name']} <{data['sender_email']}>"
             msg['To'] = data['recipient_email']
-
+            
             # Добавляем текстовое содержимое
             part1 = MIMEText(data['message_plain'], 'plain')
             msg.attach(part1)
@@ -820,7 +837,6 @@ class EmailView(generics.GenericAPIView):
                 server.sendmail(data['sender_email'], data['recipient_email'], msg.as_string())
 
             return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
-
         except Exception as e:
             # Обработка ошибок отправки
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
