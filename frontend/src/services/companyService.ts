@@ -4,7 +4,9 @@ import {
   CompanyListResponse, 
   CompanyQueryParams, 
   CreateCompanyRequest, 
-  UpdateCompanyRequest 
+  UpdateCompanyRequest,
+  CompanyRequest,
+  PaginatedCompanyList
 } from '@/types/company';
 
 /**
@@ -15,15 +17,22 @@ const companyService = {
   /**
    * Получение списка компаний с пагинацией
    */
-  getCompanies: async (params?: CompanyQueryParams): Promise<CompanyListResponse> => {
-    const response = await api.get<CompanyListResponse>('/companies/', { params });
+  getCompanies: async (params?: { page?: number, search?: string, ordering?: string, limit?: number }): Promise<PaginatedCompanyList> => {
+    // Преобразуем limit в page_size для совместимости с DRF
+    const apiParams: any = { ...params };
+    if (apiParams.limit) {
+      apiParams.page_size = apiParams.limit;
+      delete apiParams.limit;
+    }
+    
+    const response = await api.get<PaginatedCompanyList>('/companies/', { params: apiParams });
     return response.data;
   },
 
   /**
    * Получение компании по ID
    */
-  getCompanyById: async (id: string): Promise<Company> => {
+  getCompanyById: async (id: number): Promise<Company> => {
     const response = await api.get<Company>(`/companies/${id}/`);
     return response.data;
   },
@@ -31,7 +40,7 @@ const companyService = {
   /**
    * Создание новой компании
    */
-  createCompany: async (data: CreateCompanyRequest): Promise<Company> => {
+  createCompany: async (data: CompanyRequest): Promise<Company> => {
     const response = await api.post<Company>('/companies/', data);
     return response.data;
   },
@@ -39,15 +48,23 @@ const companyService = {
   /**
    * Обновление компании
    */
-  updateCompany: async (id: string, data: UpdateCompanyRequest): Promise<Company> => {
+  updateCompany: async (id: number, data: CompanyRequest): Promise<Company> => {
     const response = await api.put<Company>(`/companies/${id}/`, data);
+    return response.data;
+  },
+
+  /**
+   * Частичное обновление компании по ID
+   */
+  patchCompany: async (id: number, data: Partial<CompanyRequest>): Promise<Company> => {
+    const response = await api.patch<Company>(`/companies/${id}/`, data);
     return response.data;
   },
 
   /**
    * Удаление компании
    */
-  deleteCompany: async (id: string): Promise<void> => {
+  deleteCompany: async (id: number): Promise<void> => {
     await api.delete(`/companies/${id}/`);
   },
   

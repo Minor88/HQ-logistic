@@ -43,6 +43,10 @@ class CompanyViewSet(viewsets.ModelViewSet):
     Обеспечивает стандартные CRUD-операции для модели Company.
     Доступен только для суперпользователей для создания/удаления.
     Администраторы могут только просматривать свою компанию.
+    Поддерживает параметры:
+    - search: поиск по имени, электронной почте, телефону и адресу
+    - page: номер страницы для пагинации
+    - limit: количество элементов на странице
     """
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
@@ -67,18 +71,38 @@ class CompanyViewSet(viewsets.ModelViewSet):
         
         Суперпользователи видят все компании, администраторы - только свою.
         Остальные пользователи не видят компании.
+        Поддерживает фильтрацию по параметрам запроса:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
         """
-        # Суперпользователи видят все компании
+        # Получаем базовый queryset в зависимости от роли пользователя
         if self.request.user.is_superuser or (hasattr(self.request.user, 'userprofile') and 
                                              self.request.user.userprofile.user_group == 'superuser'):
-            return Company.objects.all()
+            queryset = Company.objects.all()
+        elif hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.user_group == 'admin' and self.request.user.userprofile.company:
+            queryset = Company.objects.filter(id=self.request.user.userprofile.company.id)
+        else:
+            queryset = Company.objects.none()
         
-        # Администраторы видят только свою компанию
-        if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.user_group == 'admin' and self.request.user.userprofile.company:
-            return Company.objects.filter(id=self.request.user.userprofile.company.id)
+        # Применяем фильтрацию по поисковому запросу, если он указан
+        search_query = self.request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
         
-        # Остальные пользователи не видят компании
-        return Company.objects.none()
+        # Сортируем результаты
+        queryset = queryset.order_by('name')  # Сортировка по умолчанию
+
+        # Пагинация реализуется стандартными средствами DRF
+        # Не нужно вручную реализовывать пагинацию, так как DRF
+        # автоматически обрабатывает параметры page и page_size
+        
+        return queryset
 
     def perform_create(self, serializer):
         company = serializer.save()

@@ -54,7 +54,7 @@ export default function CompaniesPage() {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [deleteCompanyId, setDeleteCompanyId] = useState<string | null>(null);
+  const [deleteCompanyId, setDeleteCompanyId] = useState<number | null>(null);
   
   // Проверяем, является ли пользователь суперюзером
   if (user?.role !== 'superuser') {
@@ -93,7 +93,7 @@ export default function CompaniesPage() {
     setIsCreateDialogOpen(false);
   };
   
-  const handleDeleteCompany = (id: string) => {
+  const handleDeleteCompany = (id: number) => {
     setDeleteCompanyId(id);
   };
   
@@ -292,7 +292,7 @@ export default function CompaniesPage() {
           company={editingCompany}
           onClose={handleCloseEditDialog}
           onSubmit={(data) => {
-            updateCompany({ id: editingCompany.id, data });
+            updateCompany(editingCompany.id, data);
             handleCloseEditDialog();
           }}
           isLoading={isUpdating}

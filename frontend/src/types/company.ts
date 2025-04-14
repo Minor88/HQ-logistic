@@ -1,22 +1,44 @@
-// Базовая информация о компании
+/**
+ * Интерфейс компании
+ */
 export interface Company {
-  id: string;
+  id: number;
   name: string;
   inn?: string;
-  address?: string;
-  phone?: string;
   email?: string;
-  created_at?: string;
-  updated_at?: string;
+  phone?: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Интерфейс запроса на создание/обновление компании
+ */
+export interface CompanyRequest {
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+}
+
+/**
+ * Интерфейс пагинированного ответа со списком компаний
+ */
+export interface PaginatedCompanyList {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Company[];
 }
 
 // Данные для создания компании
 export interface CreateCompanyRequest {
   name: string;
   inn?: string;
-  address?: string;
-  phone?: string;
   email?: string;
+  phone?: string;
+  address?: string;
 }
 
 // Альтернативное название для CreateCompanyRequest
@@ -26,9 +48,9 @@ export type CreateCompanyData = CreateCompanyRequest;
 export interface UpdateCompanyRequest {
   name?: string;
   inn?: string;
-  address?: string;
-  phone?: string;
   email?: string;
+  phone?: string;
+  address?: string;
 }
 
 // Параметры запроса для списка компаний
@@ -61,4 +83,10 @@ export interface CompanyState {
   selectedCompany: Company | null;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface CompanyResponse {
+  data: Company[];
+  status: string;
+  message?: string;
 } 
