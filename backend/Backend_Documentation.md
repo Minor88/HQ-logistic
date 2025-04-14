@@ -147,12 +147,12 @@ backend/
 - `DELETE /api/companies/{id}/` - удаление компании
 
 ### Пользователи
-- `GET /api/userprofiles/` - список пользователей
-- `POST /api/userprofiles/` - создание пользователя
-- `GET /api/userprofiles/{id}/` - детали пользователя
-- `PUT /api/userprofiles/{id}/` - обновление пользователя
-- `DELETE /api/userprofiles/{id}/` - удаление пользователя
-- `GET /api/clients/` - список клиентов
+- `GET /api/user-profiles/` - список пользователей
+- `POST /api/user-profiles/` - создание пользователя
+- `GET /api/user-profiles/{id}/` - детали пользователя
+- `PUT /api/user-profiles/{id}/` - обновление пользователя
+- `DELETE /api/user-profiles/{id}/` - удаление пользователя
+- `GET /api/user-profiles/clients/` - список клиентов
 
 ### Отправки
 - `GET /api/shipments/` - список отправок
@@ -167,6 +167,14 @@ backend/
 - `DELETE /api/shipments/{id}/folders/{folder_id}/` - удаление папки
 - `GET /api/shipments/{id}/files/` - получение файлов и папок отправки
 
+### Статусы отправок
+- `GET /api/shipment-statuses/` - список статусов отправок
+- `POST /api/shipment-statuses/` - создание статуса отправки
+- `GET /api/shipment-statuses/{id}/` - детали статуса отправки
+- `PUT /api/shipment-statuses/{id}/` - обновление статуса отправки
+- `DELETE /api/shipment-statuses/{id}/` - удаление статуса отправки
+- `GET /api/shipment-statuses/available_statuses/` - получение доступных статусов
+
 ### Заявки
 - `GET /api/requests/` - список заявок
 - `POST /api/requests/` - создание заявки
@@ -176,6 +184,13 @@ backend/
 - `POST /api/requests/{id}/upload-files/` - загрузка файлов
 - `GET /api/requests/{id}/download-file/{file_id}/` - скачивание файла
 - `DELETE /api/requests/{id}/files/{file_id}/` - удаление файла
+
+### Статусы запросов
+- `GET /api/request-statuses/` - список статусов запросов
+- `POST /api/request-statuses/` - создание статуса запроса
+- `GET /api/request-statuses/{id}/` - детали статуса запроса
+- `PUT /api/request-statuses/{id}/` - обновление статуса запроса
+- `DELETE /api/request-statuses/{id}/` - удаление статуса запроса
 
 ### Расчеты отправок
 - `GET /api/shipment-calculations/` - список расчетов
@@ -905,7 +920,7 @@ Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Запрос:**
 ```http
-GET /api/userprofiles/me/
+GET /api/user-profiles/me/
 Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -928,7 +943,7 @@ Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Запрос:**
 ```http
-PUT /api/userprofiles/{id}/
+PUT /api/user-profiles/{id}/
 Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 
@@ -957,7 +972,7 @@ Content-Type: application/json
 
 **Запрос:**
 ```http
-DELETE /api/userprofiles/{id}/
+DELETE /api/user-profiles/{id}/
 Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -972,7 +987,7 @@ Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Запрос:**
 ```http
-GET /api/clients/
+GET /api/user-profiles/clients/
 Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -2365,5 +2380,141 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 {
   "message": "Email успешно отправлен повторно",
   "recipients": ["user@example.com"]
+}
+``` 
+
+### Статусы запросов
+
+#### Получение списка статусов запросов
+
+**Запрос:**
+```http
+GET /api/request-statuses/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+[
+  {
+    "id": 1,
+    "code": "new",
+    "name": "Новый",
+    "is_default": true,
+    "is_final": false,
+    "order": 1,
+    "company": 1
+  },
+  {
+    "id": 2,
+    "code": "processing",
+    "name": "В обработке",
+    "is_default": false,
+    "is_final": false,
+    "order": 2,
+    "company": 1
+  },
+  {
+    "id": 3,
+    "code": "completed",
+    "name": "Завершен",
+    "is_default": false,
+    "is_final": true,
+    "order": 3,
+    "company": 1
+  }
+]
+```
+
+#### Создание статуса запроса
+
+**Запрос:**
+```http
+POST /api/request-statuses/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "code": "on_hold",
+  "name": "На удержании",
+  "is_default": false,
+  "is_final": false,
+  "order": 2
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 4,
+  "code": "on_hold",
+  "name": "На удержании",
+  "is_default": false,
+  "is_final": false,
+  "order": 2,
+  "company": 1
+}
+```
+
+#### Получение деталей статуса запроса
+
+**Запрос:**
+```http
+GET /api/request-statuses/{id}/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "id": 1,
+  "code": "new",
+  "name": "Новый",
+  "is_default": true,
+  "is_final": false,
+  "order": 1,
+  "company": 1
+}
+```
+
+#### Обновление статуса запроса
+
+**Запрос:**
+```http
+PUT /api/request-statuses/{id}/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "name": "Новый (обновлено)",
+  "order": 1
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 1,
+  "code": "new",
+  "name": "Новый (обновлено)",
+  "is_default": true,
+  "is_final": false,
+  "order": 1,
+  "company": 1
+}
+```
+
+#### Удаление статуса запроса
+
+**Запрос:**
+```http
+DELETE /api/request-statuses/{id}/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Ответ:**
+```json
+{
+  "message": "Статус успешно удален"
 }
 ``` 
