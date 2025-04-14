@@ -901,103 +901,11 @@ Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-#### Обновление данных пользователя
+#### Получение профиля текущего пользователя
 
 **Запрос:**
 ```http
-PUT /api/auth/users/me/
-Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-Content-Type: application/json
-
-{
-  "phone": "+7 (999) 987-65-43",
-  "name": "Новый Пользователь (обновлено)",
-  "comment": "Старший менеджер по продажам"
-}
-```
-
-**Ответ:**
-```json
-{
-  "id": 1,
-  "username": "new_user",
-  "email": "new_user@example.com",
-  "company": 1,
-  "phone": "+7 (999) 987-65-43",
-  "name": "Новый Пользователь (обновлено)",
-  "comment": "Старший менеджер по продажам",
-  "user_group": "manager",
-  "is_active": true
-}
-```
-
-#### Изменение пароля
-
-**Запрос:**
-```http
-POST /api/auth/users/set_password/
-Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-Content-Type: application/json
-
-{
-  "current_password": "secure_password",
-  "new_password": "new_secure_password"
-}
-```
-
-**Ответ:**
-```json
-{
-  "message": "Пароль успешно изменен"
-}
-```
-
-#### Получение списка пользователей
-
-**Запрос:**
-```http
-GET /api/userprofiles/
-Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Ответ:**
-```json
-{
-  "count": 2,
-  "next": null,
-  "previous": null,
-  "results": [
-    {
-      "id": 1,
-      "username": "new_user",
-      "email": "new_user@example.com",
-      "company": 1,
-      "phone": "+7 (999) 987-65-43",
-      "name": "Новый Пользователь (обновлено)",
-      "comment": "Старший менеджер по продажам",
-      "user_group": "manager",
-      "is_active": true
-    },
-    {
-      "id": 2,
-      "username": "admin",
-      "email": "admin@example.com",
-      "company": 1,
-      "phone": "+7 (999) 111-22-33",
-      "name": "Администратор",
-      "comment": "Руководитель отдела",
-      "user_group": "admin",
-      "is_active": true
-    }
-  ]
-}
-```
-
-#### Получение данных пользователя
-
-**Запрос:**
-```http
-GET /api/userprofiles/{id}/
+GET /api/userprofiles/me/
 Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 

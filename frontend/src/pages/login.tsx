@@ -1,85 +1,118 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import { useAuthContext } from '../contexts/AuthContext';
-import { LoginData } from '../types/auth';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Package } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-export default function Login() {
-  const router = useRouter();
-  const { login, error } = useAuthContext();
-  const [formData, setFormData] = useState<LoginData>({
-    email: '',
-    password: '',
+// Схема валидации для формы входа
+const loginSchema = z.object({
+  username: z.string().min(1, "Обязательное поле"),
+  password: z.string().min(6, "Пароль должен содержать минимум 6 символов"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+const Login = () => {
+  const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Настройка формы с валидацией через zod
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await login(formData);
-    if (success) {
-      router.push('/dashboard');
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      // Используем поле username для передачи email или имени пользователя
+      await login(data.username, data.password);
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      // Обработка ошибок происходит в контексте аутентификации
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Вход в систему
-          </h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-sm border">
+        <div className="text-center">
+          <div className="flex items-center justify-center">
+            <Package className="h-10 w-10 text-apple-purple" />
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">LogiFlow</h2>
+          <p className="mt-2 text-gray-600">Войдите в свой аккаунт</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Пароль
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Пароль"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Имя пользователя или Email</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="username или email@example.com" 
+                      {...field} 
+                      autoComplete="username"
+                      type="text"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Пароль</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="******" 
+                      {...field} 
+                      type="password"
+                      autoComplete="current-password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div>
-            <button
+            <Button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full bg-apple-purple hover:bg-apple-purple/90"
+              disabled={isLoading}
             >
-              Войти
-            </button>
-          </div>
-        </form>
+              {isLoading ? "Вход..." : "Войти"}
+            </Button>
+            
+            <div className="text-center text-sm text-gray-600 mt-4">
+              <p>
+                Для тестирования используйте учетные записи:<br/>
+                super@example.com, admin@example.com, boss@example.com<br/>
+                или имена пользователей: superuser, admin, boss<br/>
+                Пароль: password
+              </p>
+            </div>
+          </form>
+        </Form>
       </div>
     </div>
   );
-} 
+};
+
+export default Login; 

@@ -159,6 +159,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """
+        Возвращает профиль текущего пользователя.
+        
+        Используется для получения информации о текущем пользователе.
+        Доступно для всех аутентифицированных пользователей.
+        """
+        if hasattr(request.user, 'userprofile'):
+            serializer = self.get_serializer(request.user.userprofile)
+            return Response(serializer.data)
+        return Response({'detail': 'Профиль пользователя не найден.'}, status=404)
+
 
 class ShipmentStatusViewSet(viewsets.ModelViewSet):
     """

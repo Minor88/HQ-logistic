@@ -1,28 +1,32 @@
-// Типы для аутентификации и работы с пользователями
-
 // Роли пользователей
-export type UserRole = 'superuser' | 'admin' | 'boss' | 'manager' | 'warehouse' | 'client';
+export type UserRole = 
+  | "superuser" 
+  | "admin" 
+  | "boss" 
+  | "manager" 
+  | "warehouse" 
+  | "client";
 
-// Интерфейс пользователя
+// Базовая информация о компании для пользователя
+export interface Company {
+  id: string;
+  name: string;
+}
+
+// Основная информация о пользователе
 export interface User {
-  id: number;
+  id: string;
   email: string;
   first_name: string;
   last_name: string;
-  username?: string;
   phone?: string;
   role: UserRole;
-  company?: {
-    id: number;
-    name: string;
-  };
-  role_display?: string;
-  is_active?: boolean;
+  company?: Company;
 }
 
-// Данные для входа
+// Данные для входа в систему
 export interface LoginData {
-  email: string;
+  username: string; // Может содержать email или имя пользователя
   password: string;
 }
 
@@ -35,37 +39,32 @@ export interface RegisterData {
   phone?: string;
 }
 
-// Запрос на обновление данных пользователя
+// Ответ при входе или регистрации
+export interface AuthResponse {
+  user: User;
+  token: {
+    access: string;
+    refresh?: string;
+  };
+}
+
+// Данные для обновления информации пользователя
 export interface UpdateUserRequest {
   first_name?: string;
   last_name?: string;
   phone?: string;
 }
 
-// Запрос на изменение пароля
+// Данные для смены пароля
 export interface ChangePasswordRequest {
   current_password: string;
   new_password: string;
 }
 
-// Ответ от API с токеном
-export interface AuthResponse {
-  auth_token: string;
-}
-
-// Профиль пользователя из UserProfile
-export interface UserProfile {
-  id: number;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-  };
-  company: number;
-  company_name: string;
-  user_group: UserRole;
-  role_display: string;
-  phone?: string;
+// Состояние авторизации
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 } 
