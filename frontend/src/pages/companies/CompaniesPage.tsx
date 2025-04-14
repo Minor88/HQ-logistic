@@ -29,10 +29,49 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { PlusIcon, Trash2Icon, EditIcon, SearchIcon, X, LoaderIcon } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusIcon, Trash2Icon, EditIcon, SearchIcon, X, LoaderIcon, UserPlus, UserIcon } from 'lucide-react';
 import { Company } from '@/types/company';
 import { CompanyDialog } from './CompanyDialog';
 import { useAuth } from '@/hooks/useAuth';
+import companyService from '@/services/companyService';
+import authService from '@/services/authService';
+// @ts-ignore - Игнорируем проблемы с типами
+import { z } from 'zod';
+// @ts-ignore - Игнорируем проблемы с типами
+import { zodResolver } from '@hookform/resolvers/zod';
+// @ts-ignore - Игнорируем проблемы с типами
+import { useForm } from 'react-hook-form';
+import { AdminFormData } from '@/types/auth';
+
+// Схема валидации для формы администратора
+const adminSchema = z.object({
+  email: z.string().email('Введите корректный email'),
+  username: z.string().min(3, 'Логин должен содержать минимум 3 символа'),
+  first_name: z.string().min(2, 'Имя должно содержать минимум 2 символа'),
+  last_name: z.string().min(2, 'Фамилия должна содержать минимум 2 символа'),
+  password: z.string().min(8, 'Пароль должен содержать минимум 8 символов'),
+  phone: z.string().optional(),
+});
+
+type AdminFormValues = z.infer<typeof adminSchema>;
 
 export default function CompaniesPage() {
   const { user } = useAuth();
@@ -55,6 +94,25 @@ export default function CompaniesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [deleteCompanyId, setDeleteCompanyId] = useState<number | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
+  const [companyAdmins, setCompanyAdmins] = useState<any[]>([]);
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+  const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
+  
+  // Используем встроенную форму для админа
+  const adminForm = useForm<AdminFormValues>({
+    resolver: zodResolver(adminSchema),
+    defaultValues: {
+      email: '',
+      username: '',
+      first_name: '',
+      last_name: '',
+      password: '',
+      phone: '',
+    },
+  });
   
   // Проверяем, является ли пользователь суперюзером
   if (user?.role !== 'superuser') {
@@ -101,6 +159,112 @@ export default function CompaniesPage() {
     if (deleteCompanyId) {
       deleteCompany(deleteCompanyId);
       setDeleteCompanyId(null);
+    }
+  };
+  
+  // Функции для работы с администраторами
+  const handleOpenAdminManager = async (company: Company) => {
+    setSelectedCompany(company);
+    setIsLoadingAdmins(true);
+    try {
+      const admins = await companyService.getCompanyAdmins(company.id.toString());
+      console.log('Данные администраторов:', admins);
+      
+      if (admins.length > 0) {
+        console.log('Детальная структура первого администратора:', JSON.stringify(admins[0], null, 2));
+        // Выведем каждое поле объекта администратора
+        Object.keys(admins[0]).forEach(key => {
+          console.log(`Поле ${key}:`, admins[0][key]);
+        });
+      }
+      
+      // Добавим поле userName к каждому администратору
+      const adminsWithNames = await Promise.all(
+        admins.map(async (admin) => {
+          try {
+            // Используем userprofile.id
+            if (admin.id) {
+              console.log(`Запрашиваем данные для профиля с ID: ${admin.id}`);
+              const userProfile = await authService.getUserById(admin.id.toString());
+              console.log('Полученные данные пользователя:', userProfile);
+              return {
+                ...admin,
+                userName: userProfile ? 
+                  `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : 
+                  null
+              };
+            }
+            return admin;
+          } catch (error) {
+            console.error(`Ошибка при получении данных пользователя с ID ${admin.id}:`, error);
+            return admin;
+          }
+        })
+      );
+      
+      setCompanyAdmins(adminsWithNames);
+    } catch (error) {
+      console.error('Ошибка при загрузке администраторов:', error);
+    } finally {
+      setIsLoadingAdmins(false);
+    }
+  };
+  
+  const handleCloseAdminManager = () => {
+    setSelectedCompany(null);
+    setCompanyAdmins([]);
+  };
+  
+  const handleAddAdmin = () => {
+    setIsAdminDialogOpen(true);
+  };
+  
+  const handleCloseAdminDialog = () => {
+    setIsAdminDialogOpen(false);
+  };
+  
+  const handleSubmitAdmin = async (data: AdminFormValues) => {
+    if (!selectedCompany) return;
+    
+    setIsAddingAdmin(true);
+    try {
+      // Преобразуем данные формы в AdminFormData
+      const adminData: AdminFormData = {
+        email: data.email,
+        username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        password: data.password,
+        phone: data.phone
+      };
+      
+      await companyService.addCompanyAdmin(selectedCompany.id.toString(), adminData);
+      const admins = await companyService.getCompanyAdmins(selectedCompany.id.toString());
+      setCompanyAdmins(admins);
+      setIsAdminDialogOpen(false);
+      adminForm.reset(); // Сбрасываем форму
+    } catch (error) {
+      console.error('Ошибка при добавлении администратора:', error);
+    } finally {
+      setIsAddingAdmin(false);
+    }
+  };
+  
+  const handleDeleteAdmin = (adminId: string) => {
+    setDeleteAdminId(adminId);
+  };
+  
+  const confirmDeleteAdmin = async () => {
+    if (!selectedCompany || !deleteAdminId) return;
+    
+    try {
+      await companyService.removeCompanyAdmin(selectedCompany.id.toString(), deleteAdminId);
+      const admins = await companyService.getCompanyAdmins(selectedCompany.id.toString());
+      setCompanyAdmins(admins);
+    } catch (error) {
+      console.error('Ошибка при удалении администратора:', error);
+    } finally {
+      setDeleteAdminId(null);
     }
   };
   
@@ -169,7 +333,7 @@ export default function CompaniesPage() {
               <TableHead>Email</TableHead>
               <TableHead>Телефон</TableHead>
               <TableHead>Адрес</TableHead>
-              <TableHead className="w-[120px] text-right">Действия</TableHead>
+              <TableHead className="w-[180px] text-right">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -200,7 +364,16 @@ export default function CompaniesPage() {
                       <Button 
                         variant="ghost" 
                         size="icon"
+                        onClick={() => handleOpenAdminManager(company)}
+                        title="Управление администраторами"
+                      >
+                        <UserIcon className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
                         onClick={() => handleEditCompany(company)}
+                        title="Редактировать компанию"
                       >
                         <EditIcon className="h-4 w-4" />
                       </Button>
@@ -210,6 +383,7 @@ export default function CompaniesPage() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => handleDeleteCompany(company.id)}
+                            title="Удалить компанию"
                           >
                             <Trash2Icon className="h-4 w-4 text-red-500" />
                           </Button>
@@ -298,6 +472,215 @@ export default function CompaniesPage() {
           isLoading={isUpdating}
         />
       )}
+      
+      {/* Модальное окно для управления администраторами */}
+      <Dialog open={!!selectedCompany} onOpenChange={(open) => !open && handleCloseAdminManager()}>
+        <DialogContent className="sm:max-w-[650px]">
+          <DialogHeader>
+            <DialogTitle>Управление администраторами компании "{selectedCompany?.name}"</DialogTitle>
+            <DialogDescription>
+              Здесь вы можете добавлять и удалять администраторов компании
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isLoadingAdmins ? (
+            <div className="flex justify-center items-center p-8">
+              <LoaderIcon className="h-6 w-6 animate-spin mr-2" />
+              Загрузка администраторов...
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Администраторы</h3>
+                <Button size="sm" onClick={handleAddAdmin}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Добавить
+                </Button>
+              </div>
+              
+              {companyAdmins.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  У компании нет администраторов
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Имя</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="w-[80px] text-right">Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {companyAdmins.map((admin) => (
+                        <TableRow key={admin.id}>
+                          <TableCell>
+                            {admin.user && `${admin.user.firstName || ''} ${admin.user.lastName || ''}`.trim() || 'Без имени'}
+                          </TableCell>
+                          <TableCell>
+                            {admin.user && admin.user.email || '—'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <AlertDialog open={deleteAdminId === admin.id}>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleDeleteAdmin(admin.id)}
+                                >
+                                  <Trash2Icon className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Удаление администратора</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Вы уверены, что хотите удалить администратора
+                                    {admin.user && ` ${admin.user.firstName || ''} ${admin.user.lastName || ''}`.trim() || ' без имени'}?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setDeleteAdminId(null)}>
+                                    Отмена
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={confirmDeleteAdmin}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    Удалить
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={handleCloseAdminManager}>
+                  Закрыть
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог добавления администратора */}
+      <Dialog open={isAdminDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCloseAdminDialog();
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Добавить администратора для компании "{selectedCompany?.name}"</DialogTitle>
+            <DialogDescription>
+              Заполните форму для создания нового администратора компании
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...adminForm}>
+            <form onSubmit={adminForm.handleSubmit(handleSubmitAdmin)} className="space-y-4">
+              <FormField
+                control={adminForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Логин</FormLabel>
+                    <FormControl>
+                      <Input placeholder="username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Имя</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Иван" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Фамилия</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Иванов" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Телефон</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+7 (999) 123-45-67" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Пароль</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="********" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleCloseAdminDialog}>
+                  Отмена
+                </Button>
+                <Button type="submit" disabled={isAddingAdmin}>
+                  {isAddingAdmin ? (
+                    <>
+                      <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                      Сохранение...
+                    </>
+                  ) : (
+                    'Добавить'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

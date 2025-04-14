@@ -8,6 +8,8 @@ import {
   CompanyRequest,
   PaginatedCompanyList
 } from '@/types/company';
+import { AdminFormData } from '@/types/auth';
+import { UserProfile } from '@/types/user';
 
 /**
  * Сервис для работы с компаниями
@@ -71,16 +73,16 @@ const companyService = {
   /**
    * Получение администраторов компании
    */
-  getCompanyAdmins: async (companyId: string): Promise<any[]> => {
-    const response = await api.get<any[]>(`/companies/${companyId}/admins/`);
+  getCompanyAdmins: async (companyId: string): Promise<UserProfile[]> => {
+    const response = await api.get<UserProfile[]>(`/companies/${companyId}/admins/`);
     return response.data;
   },
   
   /**
    * Добавление администратора в компанию
    */
-  addCompanyAdmin: async (companyId: string, data: { email: string; first_name: string; last_name: string; password: string; }): Promise<any> => {
-    const response = await api.post<any>(`/companies/${companyId}/admins/`, data);
+  addCompanyAdmin: async (companyId: string, data: AdminFormData): Promise<UserProfile> => {
+    const response = await api.post<UserProfile>(`/companies/${companyId}/add_admin/`, data);
     return response.data;
   },
   

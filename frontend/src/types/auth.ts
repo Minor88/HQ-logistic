@@ -67,4 +67,16 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+}
+
+/**
+ * Данные для создания администратора компании
+ */
+export interface AdminFormData {
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  phone?: string;
 } 

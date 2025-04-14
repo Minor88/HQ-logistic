@@ -585,6 +585,10 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       parameters:
       - name: ordering
         required: false
@@ -625,6 +629,10 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       tags:
       - companies
       requestBody:
@@ -659,6 +667,10 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       parameters:
       - in: path
         name: id
@@ -687,6 +699,10 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       parameters:
       - in: path
         name: id
@@ -727,6 +743,10 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       parameters:
       - in: path
         name: id
@@ -766,12 +786,105 @@ paths:
         Обеспечивает стандартные CRUD-операции для модели Company.
         Доступен только для суперпользователей для создания/удаления.
         Администраторы могут только просматривать свою компанию.
+        Поддерживает параметры:
+        - search: поиск по имени, электронной почте, телефону и адресу
+        - page: номер страницы для пагинации
+        - limit: количество элементов на странице
       parameters:
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/companies/{id}/add_admin/:
+    post:
+      operationId: companiesAddAdminCreate
+      description: |-
+        Добавляет нового администратора для компании.
+
+        Создает нового пользователя с ролью 'admin' и привязывает его к компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+  /api/companies/{id}/admins/:
+    get:
+      operationId: companiesAdminsRetrieve
+      description: Возвращает список администраторов компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      tags:
+      - companies
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+  /api/companies/{id}/admins/{userId}/:
+    delete:
+      operationId: companiesAdminsDestroy
+      description: Удаляет администратора компании.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+          pattern: ^\d+$
         required: true
       tags:
       - companies

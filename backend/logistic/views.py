@@ -58,7 +58,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         Для любых изменений (создание, редактирование, удаление) - только суперпользователи.
         Для просмотра - суперпользователи и администраторы (админы видят только свою компанию).
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'admins', 'add_admin', 'remove_admin']:
             # Для модификации данных - только суперпользователи
             return [IsSuperuser()]
         
@@ -139,6 +139,95 @@ class CompanyViewSet(viewsets.ModelViewSet):
         # Создаем статусы для отправок
         for status_data in shipment_statuses:
             ShipmentStatus.objects.create(company=company, **status_data)
+
+    @action(detail=True, methods=['get'])
+    def admins(self, request, pk=None):
+        """
+        Возвращает список администраторов компании.
+        """
+        company = self.get_object()
+        admins = UserProfile.objects.filter(company=company, user_group='admin')
+        serializer = UserProfileSerializer(admins, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def add_admin(self, request, pk=None):
+        """
+        Добавляет нового администратора для компании.
+        
+        Создает нового пользователя с ролью 'admin' и привязывает его к компании.
+        """
+        company = self.get_object()
+        
+        # Получаем данные из запроса
+        email = request.data.get('email')
+        username = request.data.get('username', email)  # Если логин не указан, используем email
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        phone = request.data.get('phone', '')
+        password = request.data.get('password')
+        
+        if not email or not password:
+            return Response(
+                {"error": "Email и пароль обязательны"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Проверяем, существует ли пользователь с таким email или username
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {"error": "Пользователь с таким email уже существует"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Пользователь с таким логином уже существует"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Создаем пользователя
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        # Создаем профиль с ролью администратора
+        profile = UserProfile.objects.create(
+            user=user,
+            company=company,
+            user_group='admin',
+            phone=phone,
+            name=f"{first_name} {last_name}".strip()  # Формируем имя из first_name и last_name
+        )
+        
+        serializer = UserProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['delete'], url_path=r'admins/(?P<user_id>\d+)')
+    def remove_admin(self, request, pk=None, user_id=None):
+        """
+        Удаляет администратора компании.
+        """
+        company = self.get_object()
+        
+        try:
+            profile = UserProfile.objects.get(id=user_id, company=company, user_group='admin')
+            user = profile.user
+            
+            # Удаляем профиль и пользователя
+            profile.delete()
+            user.delete()
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "Администратор не найден"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
