@@ -444,11 +444,23 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 class ShipmentStatusViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления статусами отправок.
-    Доступен только администраторам компании.
+    Редактирование доступно только администраторам компании.
+    Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
     """
     serializer_class = ShipmentStatusSerializer
-    permission_classes = [IsCompanyAdmin]
     queryset = ShipmentStatus.objects.all()
+    
+    def get_permissions(self):
+        """
+        Возвращает разные наборы разрешений в зависимости от действия.
+        Для действий чтения (list, retrieve) - все сотрудники компании.
+        Для действий изменения (create, update, delete) - только администраторы.
+        """
+        if self.action in ['list', 'retrieve', 'available_statuses']:
+            # Для чтения разрешаем всем сотрудникам компании
+            return [IsCompanyMember()]
+        # Для создания, обновления, удаления - только админы
+        return [IsCompanyAdmin()]
 
     def get_queryset(self):
         """
@@ -477,10 +489,27 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     
     Обеспечивает стандартные CRUD-операции для модели Shipment,
     а также дополнительные методы для работы с файлами и папками.
-    Доступен для менеджеров компаний и выше.
+    Доступ:
+    - Чтение и получение файлов: менеджеры, руководители, склад
+    - Полное редактирование: менеджеры, руководители
+    - Обновление статуса и комментария: сотрудники склада
     """
     queryset = Shipment.objects.all().order_by('-created_at')
-    permission_classes = [IsCompanyManager]
+    
+    def get_permissions(self):
+        """
+        Возвращает разные наборы разрешений в зависимости от действия.
+        """
+        # Разрешаем доступ к специальному методу update_status для склада
+        if self.action == 'update_status':
+            return [IsCompanyWarehouse()]
+        
+        # Для создания, удаления и полного редактирования - менеджеры и выше
+        if self.action in ['create', 'destroy', 'update', 'partial_update']:
+            return [IsCompanyManager()]
+            
+        # Для просмотра, загрузки файлов, скачивания - склад и выше
+        return [IsCompanyWarehouse()]
     
     def get_serializer_class(self):
         """
@@ -508,32 +537,8 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         elif user_profile.user_group == 'manager':
             return Shipment.objects.filter(company=company)
         elif user_profile.user_group == 'warehouse':
-            # Проверяем существование статусов
-            warehouse_status = ShipmentStatus.objects.filter(
-                company=company,
-                code='at_warehouse'
-            ).first()
-            doc_status = ShipmentStatus.objects.filter(
-                company=company,
-                code='document_preparation'
-            ).first()
-            
-            if not warehouse_status or not doc_status:
-                # Если статусы не существуют, создаем их
-                self._create_default_statuses(company)
-                warehouse_status = ShipmentStatus.objects.get(
-                    company=company,
-                    code='at_warehouse'
-                )
-                doc_status = ShipmentStatus.objects.get(
-                    company=company,
-                    code='document_preparation'
-                )
-            
-            return Shipment.objects.filter(
-                company=company,
-                status__in=[warehouse_status, doc_status]
-            )
+            # Разрешаем сотрудникам склада видеть все отправления компании
+            return Shipment.objects.filter(company=company)
         elif user_profile.user_group == 'client':
             return Shipment.objects.filter(
                 company=company,
@@ -789,6 +794,41 @@ class ShipmentViewSet(viewsets.ModelViewSet):
             "all_files": all_files_serializer.data
         })
 
+    @action(detail=True, methods=['post'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """
+        Обновляет статус и комментарий отправления.
+        Доступно для сотрудников склада, менеджеров и выше.
+        """
+        shipment = self.get_object()
+        status_id = request.data.get('status')
+        comment = request.data.get('comment')
+        
+        # Проверка наличия статуса
+        if not status_id:
+            return Response({'error': 'Необходимо указать ID статуса'}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            # Получаем статус из базы данных
+            shipment_status = ShipmentStatus.objects.get(id=status_id)
+            
+            # Обновляем поля отправления
+            shipment.status = shipment_status
+            
+            if comment is not None:
+                shipment.comment = comment
+                
+            shipment.save()
+            
+            # Возвращаем обновленное отправление
+            serializer = ShipmentListSerializer(shipment) if self.action != 'retrieve' else ShipmentDetailSerializer(shipment)
+            return Response(serializer.data)
+            
+        except ShipmentStatus.DoesNotExist:
+            return Response({'error': 'Указанный статус не найден'}, 
+                            status=status.HTTP_404_NOT_FOUND)
+
 
 class RequestViewSet(viewsets.ModelViewSet):
     queryset = Request.objects.all().order_by('-created_at')
@@ -798,6 +838,17 @@ class RequestViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return RequestDetailSerializer
         return RequestListSerializer
+    
+    def get_permissions(self):
+        """
+        Возвращает разные наборы разрешений в зависимости от действия.
+        """
+        # Разрешаем доступ к специальному методу update_status для склада
+        if self.action == 'update_status':
+            return [IsCompanyWarehouse()]
+            
+        # Для обычных действий используем стандартные разрешения
+        return [IsCompanyManager(), IsCompanyClient()]
     
     def get_queryset(self):
         """
@@ -819,8 +870,7 @@ class RequestViewSet(viewsets.ModelViewSet):
             )
         elif user_profile.user_group == 'warehouse':
             return Request.objects.filter(
-                Q(client__company=user_profile.company) &
-                Q(status__code__in=['on_warehouse', 'ready'])
+                Q(client__company=user_profile.company)
             )
         else:  # client
             return Request.objects.filter(client=user_profile)
@@ -832,6 +882,50 @@ class RequestViewSet(viewsets.ModelViewSet):
         company = self.request.user.userprofile.company
         default_status = RequestStatus.objects.get(company=company, is_default=True)
         serializer.save(status=default_status)
+        
+    @action(detail=True, methods=['post'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """
+        Обновляет статус, комментарий и фактические вес/объем заявки.
+        Доступно для сотрудников склада, менеджеров и выше.
+        """
+        request_obj = self.get_object()
+        status_id = request.data.get('status')
+        comment = request.data.get('comment')
+        actual_weight = request.data.get('actual_weight')
+        actual_volume = request.data.get('actual_volume')
+        
+        # Проверка наличия статуса
+        if not status_id:
+            return Response({'error': 'Необходимо указать ID статуса'}, 
+                           status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            # Получаем статус из базы данных
+            request_status = RequestStatus.objects.get(id=status_id)
+            
+            # Обновляем поля заявки
+            request_obj.status = request_status
+            
+            if comment is not None:
+                request_obj.comment = comment
+                
+            # Обновляем фактический вес и объем, если указаны
+            if actual_weight is not None:
+                request_obj.actual_weight = actual_weight
+                
+            if actual_volume is not None:
+                request_obj.actual_volume = actual_volume
+                
+            request_obj.save()
+            
+            # Возвращаем обновленную заявку
+            serializer = RequestListSerializer(request_obj) if self.action != 'retrieve' else RequestDetailSerializer(request_obj)
+            return Response(serializer.data)
+            
+        except RequestStatus.DoesNotExist:
+            return Response({'error': 'Указанный статус не найден'}, 
+                           status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser])
     def request_upload_files(self, request, pk=None):
@@ -1372,20 +1466,36 @@ class ShipmentCalculationViewSet(viewsets.ModelViewSet):
 class RequestStatusViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления статусами заявок.
-    Доступен только администраторам компании.
+    
+    Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+    Доступ:
+    - Чтение: все сотрудники компании (включая менеджеров, склад)
+    - Создание/изменение/удаление: только администраторы
     """
+    queryset = RequestStatus.objects.all().order_by('name')
     serializer_class = RequestStatusSerializer
-    permission_classes = [IsCompanyAdmin]
-    queryset = RequestStatus.objects.all()
-
+    
+    def get_permissions(self):
+        """
+        Возвращает разные наборы разрешений в зависимости от действия.
+        """
+        # Для чтения доступно всем сотрудникам компании (включая склад и менеджеров)
+        if self.action in ['list', 'retrieve']:
+            return [IsCompanyWarehouse()]
+        
+        # Для создания, изменения и удаления - только администраторы
+        return [IsCompanyAdmin()]
+    
     def get_queryset(self):
         """
-        Возвращает только статусы компании пользователя.
+        Возвращает только статусы, доступные в компании пользователя.
         """
-        return RequestStatus.objects.filter(company=self.request.user.userprofile.company)
-
-    def perform_create(self, serializer):
-        """
-        При создании статуса автоматически устанавливает компанию пользователя.
-        """
-        serializer.save(company=self.request.user.userprofile.company)
+        if self.request.user.is_superuser:
+            return RequestStatus.objects.all().order_by('name')
+        
+        if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.company:
+            return RequestStatus.objects.filter(
+                company=self.request.user.userprofile.company
+            ).order_by('name')
+        
+        return RequestStatus.objects.none()

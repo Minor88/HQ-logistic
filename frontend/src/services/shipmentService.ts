@@ -76,6 +76,12 @@ const shipmentService = {
     return data;
   },
 
+  // Новый метод для обновления только статуса и комментария отправления (для роли warehouse)
+  updateShipmentStatus: async (id: string, statusData: { status: number, comment?: string }): Promise<Shipment> => {
+    const { data } = await api.post<Shipment>(`/shipments/${id}/update-status/`, statusData);
+    return data;
+  },
+
   // Удаление отправления
   deleteShipment: async (id: string): Promise<void> => {
     await api.delete(`/shipments/${id}/`);

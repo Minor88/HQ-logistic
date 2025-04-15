@@ -204,7 +204,17 @@ export default function ShipmentsPage() {
         company: selectedShipment.company // Явно включаем company в payload
       };
       
-      await shipmentService.updateShipment(selectedShipment.id.toString(), payload);
+      // Используем разные методы для обновления в зависимости от роли пользователя
+      if (user?.role === 'warehouse') {
+        // Для роли warehouse используем специальный метод, который позволяет менять только статус и комментарий
+        await shipmentService.updateShipmentStatus(selectedShipment.id.toString(), {
+          status: payload.status,
+          comment: payload.comment
+        });
+      } else {
+        // Для остальных ролей используем обычный метод обновления
+        await shipmentService.updateShipment(selectedShipment.id.toString(), payload);
+      }
       
       await loadShipments();
       setIsEditDialogOpen(false);

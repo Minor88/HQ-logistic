@@ -1338,7 +1338,11 @@ paths:
       operationId: requestStatusesList
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       parameters:
       - name: ordering
         required: false
@@ -1375,7 +1379,11 @@ paths:
       operationId: requestStatusesCreate
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       tags:
       - request-statuses
       requestBody:
@@ -1406,7 +1414,11 @@ paths:
       operationId: requestStatusesRetrieve
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       parameters:
       - in: path
         name: id
@@ -1431,7 +1443,11 @@ paths:
       operationId: requestStatusesUpdate
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       parameters:
       - in: path
         name: id
@@ -1468,7 +1484,11 @@ paths:
       operationId: requestStatusesPartialUpdate
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       parameters:
       - in: path
         name: id
@@ -1504,7 +1524,11 @@ paths:
       operationId: requestStatusesDestroy
       description: |-
         ViewSet для управления статусами заявок.
-        Доступен только администраторам компании.
+
+        Обеспечивает стандартные CRUD-операции для модели RequestStatus.
+        Доступ:
+        - Чтение: все сотрудники компании (включая менеджеров, склад)
+        - Создание/изменение/удаление: только администраторы
       parameters:
       - in: path
         name: id
@@ -1806,6 +1830,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/RequestList'
           description: ''
+  /api/requests/{id}/update-status/:
+    post:
+      operationId: requestsUpdateStatusCreate
+      description: |-
+        Обновляет статус, комментарий и фактические вес/объем заявки.
+        Доступно для сотрудников склада, менеджеров и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заявка.
+        required: true
+      tags:
+      - requests
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestList'
+          description: ''
   /api/shipment-calculations/:
     get:
       operationId: shipmentCalculationsList
@@ -2087,7 +2149,8 @@ paths:
       operationId: shipmentStatusesList
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       parameters:
       - name: ordering
         required: false
@@ -2124,7 +2187,8 @@ paths:
       operationId: shipmentStatusesCreate
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       tags:
       - shipment-statuses
       requestBody:
@@ -2155,7 +2219,8 @@ paths:
       operationId: shipmentStatusesRetrieve
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       parameters:
       - in: path
         name: id
@@ -2180,7 +2245,8 @@ paths:
       operationId: shipmentStatusesUpdate
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       parameters:
       - in: path
         name: id
@@ -2217,7 +2283,8 @@ paths:
       operationId: shipmentStatusesPartialUpdate
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       parameters:
       - in: path
         name: id
@@ -2253,7 +2320,8 @@ paths:
       operationId: shipmentStatusesDestroy
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       parameters:
       - in: path
         name: id
@@ -2275,7 +2343,8 @@ paths:
       operationId: shipmentStatusesAvailableStatusesRetrieve
       description: |-
         ViewSet для управления статусами отправок.
-        Доступен только администраторам компании.
+        Редактирование доступно только администраторам компании.
+        Чтение доступно для менеджеров, руководителей, сотрудников склада и клиентов.
       tags:
       - shipment-statuses
       security:
@@ -2297,7 +2366,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       parameters:
       - name: ordering
         required: false
@@ -2337,7 +2409,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       tags:
       - shipments
       requestBody:
@@ -2371,7 +2446,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       parameters:
       - in: path
         name: id
@@ -2399,7 +2477,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       parameters:
       - in: path
         name: id
@@ -2439,7 +2520,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       parameters:
       - in: path
         name: id
@@ -2478,7 +2562,10 @@ paths:
 
         Обеспечивает стандартные CRUD-операции для модели Shipment,
         а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Доступ:
+        - Чтение и получение файлов: менеджеры, руководители, склад
+        - Полное редактирование: менеджеры, руководители
+        - Обновление статуса и комментария: сотрудники склада
       parameters:
       - in: path
         name: id
@@ -2674,6 +2761,44 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/shipments/{id}/update-status/:
+    post:
+      operationId: shipmentsUpdateStatusCreate
+      description: |-
+        Обновляет статус и комментарий отправления.
+        Доступно для сотрудников склада, менеджеров и выше.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Отправка.
+        required: true
+      tags:
+      - shipments
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+          description: ''
   /api/shipments/{id}/upload_files/:
     post:
       operationId: shipmentsUploadFilesCreate
