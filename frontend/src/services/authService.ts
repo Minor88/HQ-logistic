@@ -77,14 +77,10 @@ const authService = {
       const userResponse = await apiClient.get<any>('/auth/users/me/');
       const userData = userResponse.data;
       
-      console.log('Базовые данные пользователя:', userData);
-      
       try {
         // Получаем профиль пользователя с ролью и другими данными
         const profileResponse = await apiClient.get<any>('/userprofiles/me/');
         const profileData = profileResponse.data;
-        
-        console.log('Профиль пользователя:', profileData);
         
         // Объединяем данные из обоих запросов
         const fullUserData = {
@@ -99,7 +95,6 @@ const authService = {
           } : undefined
         };
         
-        console.log('Полные данные пользователя:', fullUserData);
         return fullUserData;
       } catch (profileError) {
         console.error('Ошибка при получении профиля пользователя:', profileError);
@@ -119,8 +114,6 @@ const authService = {
         } else if (username.includes('warehouse')) {
           role = 'warehouse';
         }
-        
-        console.log('Определена роль на основе username:', role);
         
         return {
           ...userData,

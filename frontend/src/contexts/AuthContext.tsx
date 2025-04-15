@@ -71,10 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Преобразует AuthUser в User для внутреннего использования
   const mapAuthUserToUser = (authUser: any): User => {
-    console.log('Raw user data from API:', authUser); // Добавляем отладочную информацию
-    
     if (!authUser) {
-      console.error('No user data received from API');
       return {
         id: '',
         name: 'Гость',
@@ -89,8 +86,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const userRole = authUser.role || 
                     (authUser.username?.includes('boss') ? 'boss' : 
                      authUser.username?.includes('admin') ? 'admin' : 'client') as UserRole;
-    
-    console.log('Определена роль пользователя:', userRole);
     
     return {
       id: authUser.id,

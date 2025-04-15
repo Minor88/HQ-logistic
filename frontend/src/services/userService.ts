@@ -20,22 +20,11 @@ const userService = {
    * Получение списка пользователей компании
    */
   getCompanyUsers: async (): Promise<PaginatedResponse<UserProfile>> => {
-    console.log('[userService] Запрос списка пользователей компании');
-    console.log('[userService] Токен авторизации:', localStorage.getItem('access_token') ? 'Присутствует' : 'Отсутствует');
-    
     try {
       const response = await api.get<PaginatedResponse<UserProfile>>('/userprofiles/');
-      console.log('[userService] Успешный ответ от API');
-      
-      // Отладочная информация о структуре данных
-      if (response.data && response.data.results) {
-        console.log('[userService] Количество пользователей:', response.data.results.length);
-        console.log('[userService] Пример первого пользователя:', JSON.stringify(response.data.results[0], null, 2));
-      }
-      
       return response.data;
     } catch (error) {
-      console.error('[userService] Ошибка при запросе к API:', error);
+      console.error('Ошибка при запросе списка пользователей:', error);
       throw error;
     }
   },

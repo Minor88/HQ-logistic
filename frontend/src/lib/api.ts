@@ -53,21 +53,14 @@ const hasTokens = (): boolean => {
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
-    console.log(`[API] Запрос к ${config.url}`, { 
-      метод: config.method,
-      токен: token ? 'Присутствует' : 'Отсутствует' 
-    });
     
     if (token && config.headers) {
       // Для JWT используем формат "Bearer {token}"
       config.headers['Authorization'] = `Bearer ${token}`;
-    } else if (!token) {
-      console.warn('[API] Токен отсутствует для запроса к', config.url);
     }
     return config;
   },
   (error: AxiosError) => {
-    console.error('[API] Ошибка в перехватчике запросов:', error);
     return Promise.reject(error);
   }
 );
@@ -75,20 +68,11 @@ api.interceptors.request.use(
 // Перехватчик ответов для обработки ошибок
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(`[API] Успешный ответ от ${response.config.url}`, { 
-      статус: response.status,
-      данные: typeof response.data === 'object' ? 'Объект' : typeof response.data
-    });
     return response;
   },
   async (error: AxiosError) => {
     // Получаем оригинальный запрос
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    
-    console.error(`[API] Ошибка при запросе к ${originalRequest.url}`, { 
-      статус: error.response?.status,
-      данные: error.response?.data
-    });
     
     // Если сервер вернул 401 (Unauthorized) и у нас есть refresh token
     if (error.response?.status === 401 && !originalRequest._retry && getRefreshToken()) {

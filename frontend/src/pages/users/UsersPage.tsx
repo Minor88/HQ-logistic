@@ -97,29 +97,19 @@ export default function UsersPage() {
       setIsLoading(true);
       
       const data = await userService.getCompanyUsers();
-      console.log('[UsersPage] Получен ответ от API:', {
-        тип: typeof data,
-        isPaginated: data && typeof data === 'object' && 'results' in data,
-        isArray: Array.isArray(data)
-      });
       
       if (data && data.results) {
-        console.log('[UsersPage] Получены данные в пагинированном формате:', 
-          data.results.length, 'пользователей');
         setUsers(data.results);
         setFilteredUsers(data.results);
       } else if (Array.isArray(data)) {
-        console.log('[UsersPage] Получены данные в формате массива:', 
-          data.length, 'пользователей');
         setUsers(data);
         setFilteredUsers(data);
       } else {
-        console.error('[UsersPage] Неожиданный формат данных от API');
         setUsers([]);
         setFilteredUsers([]);
       }
     } catch (error) {
-      console.error('[UsersPage] Ошибка при загрузке пользователей:', error);
+      console.error('Ошибка при загрузке пользователей:', error);
       setUsers([]);
       setFilteredUsers([]);
     } finally {
