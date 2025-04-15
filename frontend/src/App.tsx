@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Companies from "./pages/companies";
 import UsersPage from "./pages/users/UsersPage";
 import SettingsPage from "./pages/settings/SettingsPage";
+import ShipmentsPage from "./pages/shipments/ShipmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,11 @@ const App = () => (
             <Route path="/settings" element={
               <MainLayout requiredRoles={["superuser", "admin"]}>
                 <SettingsPage />
+              </MainLayout>
+            } />
+            <Route path="/shipments" element={
+              <MainLayout requiredRoles={["superuser", "admin", "boss", "manager", "warehouse", "client"]}>
+                <ShipmentsPage />
               </MainLayout>
             } />
             <Route path="*" element={<NotFound />} />

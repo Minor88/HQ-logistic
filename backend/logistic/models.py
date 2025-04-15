@@ -5,6 +5,9 @@ from django.utils import timezone
 from django.conf import settings
 import shutil
 from django.core.exceptions import ValidationError
+import io
+import zipfile
+from django.http import FileResponse
 
 # Модель логистической компании
 class Company(models.Model):
@@ -105,6 +108,38 @@ class Shipment(models.Model):
     def __str__(self):
         return f"Отправка #{self.number} - {self.get_status_display()}"
     
+    def get_files_zip(self):
+        """
+        Создает ZIP-архив со всеми файлами отправки.
+        
+        Returns:
+            FileResponse: Ответ с ZIP-файлом
+        """
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w') as zip_file:
+            # Получаем все файлы из корня
+            root_files = ShipmentFile.objects.filter(shipment=self, folder=None)
+            for file_obj in root_files:
+                file_path = file_obj.get_file_path()
+                if os.path.exists(file_path):
+                    # Добавляем файл в архив
+                    zip_file.write(file_path, os.path.basename(file_path))
+            
+            # Получаем все файлы из папок
+            folders = ShipmentFolder.objects.filter(shipment=self)
+            for folder in folders:
+                folder_files = ShipmentFile.objects.filter(shipment=self, folder=folder)
+                for file_obj in folder_files:
+                    file_path = file_obj.get_file_path()
+                    if os.path.exists(file_path):
+                        # Добавляем файл в архив, сохраняя структуру папок
+                        zip_path = os.path.join(folder.name, os.path.basename(file_path))
+                        zip_file.write(file_path, zip_path)
+        
+        # Перемещаем указатель в начало буфера
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename=f'shipment_{self.number}_files.zip')
+    
     class Meta:
         verbose_name = 'Отправка'
         verbose_name_plural = 'Отправки'
@@ -200,6 +235,27 @@ class Request(models.Model):
 
     def __str__(self):
         return f"Заявка #{self.number} - {self.get_status_display()}"
+    
+    def get_files_zip(self):
+        """
+        Создает ZIP-архив со всеми файлами заявки.
+        
+        Returns:
+            FileResponse: Ответ с ZIP-файлом
+        """
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w') as zip_file:
+            # Получаем все файлы заявки
+            files = RequestFile.objects.filter(request=self)
+            for file_obj in files:
+                file_path = file_obj.get_file_path()
+                if os.path.exists(file_path):
+                    # Добавляем файл в архив
+                    zip_file.write(file_path, os.path.basename(file_path))
+        
+        # Перемещаем указатель в начало буфера
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename=f'request_{self.number}_files.zip')
     
     class Meta:
         verbose_name = 'Заявка'

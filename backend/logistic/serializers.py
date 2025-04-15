@@ -5,6 +5,8 @@ from .models import (
     Article, Finance, ShipmentCalculation, ShipmentStatus, RequestStatus
 )
 from django.contrib.auth.models import User
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 
 class UserProfileUserSerializer(serializers.ModelSerializer):
@@ -61,11 +63,21 @@ class ShipmentFolderSerializer(serializers.ModelSerializer):
     Включает дополнительное поле для отображения имени создавшего пользователя.
     """
     created_by_name = serializers.CharField(source='created_by.name', read_only=True)
+    files = serializers.SerializerMethodField()
     
     class Meta:
         model = ShipmentFolder
-        fields = ['id', 'name', 'created_by', 'created_by_name', 'created_at']
+        fields = ['id', 'name', 'created_by', 'created_by_name', 'created_at', 'files']
         read_only_fields = ['created_at']
+    
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_files(self, obj):
+        """
+        Метод для получения всех файлов, находящихся в данной папке.
+        """
+        files = obj.files.all()
+        from .serializers import ShipmentFileSerializer  # Импорт здесь для избежания циклических зависимостей
+        return ShipmentFileSerializer(files, many=True).data
 
 
 class ShipmentFileSerializer(serializers.ModelSerializer):
@@ -163,7 +175,7 @@ class ShipmentListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'number', 'company', 'company_name', 'status', 'status_code',
             'status_display', 'created_at', 'created_by', 'created_by_name',
-            'requests_count'
+            'requests_count', 'comment'
         ]
         read_only_fields = ['created_at', 'requests_count']
     

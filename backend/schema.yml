@@ -2595,11 +2595,13 @@ paths:
     get:
       operationId: shipmentsFilesRetrieve
       description: |-
-        ViewSet для управления отправками.
+        Получает список всех файлов и папок отправки.
 
-        Обеспечивает стандартные CRUD-операции для модели Shipment,
-        а также дополнительные методы для работы с файлами и папками.
-        Доступен для менеджеров компаний и выше.
+        Файлы в папках включены в данные о каждой папке.
+        Возвращает структурированное представление файлов:
+        - files: файлы в корне
+        - folders: папки с вложенными файлами
+        - all_files: плоский список всех файлов (включая файлы в папках)
       parameters:
       - in: path
         name: id
@@ -4201,6 +4203,10 @@ components:
           type: integer
           nullable: true
           title: Создал
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
     PatchedShipmentStatusRequest:
       type: object
       properties:
@@ -4868,9 +4874,15 @@ components:
           format: date-time
           readOnly: true
           title: Дата создания
+        files:
+          type: object
+          additionalProperties: {}
+          description: Метод для получения всех файлов, находящихся в данной папке.
+          readOnly: true
       required:
       - created_at
       - created_by_name
+      - files
       - id
       - name
     ShipmentList:
@@ -4918,6 +4930,10 @@ components:
           type: integer
           description: Вычисляет количество заявок, связанных с отправкой.
           readOnly: true
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
       required:
       - company
       - company_name
@@ -4951,6 +4967,10 @@ components:
           type: integer
           nullable: true
           title: Создал
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
       required:
       - company
       - number

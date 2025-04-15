@@ -681,9 +681,8 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         """
         try:
             shipment_instance = self.get_object()
-            files = ShipmentFile.objects.filter(shipment=shipment_instance)
-            response = FileResponse(shipment_instance.get_files_zip(), as_attachment=True)
-            response['Content-Disposition'] = f'attachment; filename="{shipment_instance.name}_files.zip"'
+            response = shipment_instance.get_files_zip()
+            response['Content-Disposition'] = f'attachment; filename="shipment_{shipment_instance.number}_files.zip"'
             response['Access-Control-Expose-Headers'] = 'Content-Disposition'
             return response
         except Exception as e:
@@ -766,16 +765,28 @@ class ShipmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='files')
     def get_files(self, request, pk=None):
+        """
+        Получает список всех файлов и папок отправки.
+        
+        Файлы в папках включены в данные о каждой папке.
+        Возвращает структурированное представление файлов:
+        - files: файлы в корне
+        - folders: папки с вложенными файлами
+        - all_files: плоский список всех файлов (включая файлы в папках)
+        """
         shipment = self.get_object()
-        files = ShipmentFile.objects.filter(shipment=shipment, folder=None)
+        root_files = ShipmentFile.objects.filter(shipment=shipment, folder=None)
         folders = ShipmentFolder.objects.filter(shipment=shipment)
+        all_files = ShipmentFile.objects.filter(shipment=shipment)
 
-        file_serializer = ShipmentFileSerializer(files, many=True)
+        file_serializer = ShipmentFileSerializer(root_files, many=True)
         folder_serializer = ShipmentFolderSerializer(folders, many=True)
+        all_files_serializer = ShipmentFileSerializer(all_files, many=True)
 
         return Response({
             "files": file_serializer.data,
-            "folders": folder_serializer.data
+            "folders": folder_serializer.data,
+            "all_files": all_files_serializer.data
         })
 
 
@@ -876,9 +887,8 @@ class RequestViewSet(viewsets.ModelViewSet):
         """
         try:
             request_instance = self.get_object()
-            files = RequestFile.objects.filter(request=request_instance)
             response = request_instance.get_files_zip()
-            response['Content-Disposition'] = f'attachment; filename="{request_instance.name}_files.zip"'
+            response['Content-Disposition'] = f'attachment; filename="request_{request_instance.number}_files.zip"'
             response['Access-Control-Expose-Headers'] = 'Content-Disposition'
             return response
         except Exception as e:
