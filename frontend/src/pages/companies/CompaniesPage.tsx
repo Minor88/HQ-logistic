@@ -67,7 +67,10 @@ const adminSchema = z.object({
   username: z.string().min(3, 'Логин должен содержать минимум 3 символа'),
   first_name: z.string().min(2, 'Имя должно содержать минимум 2 символа'),
   last_name: z.string().min(2, 'Фамилия должна содержать минимум 2 символа'),
-  password: z.string().min(8, 'Пароль должен содержать минимум 8 символов'),
+  password: z.union([
+    z.string().min(8, 'Пароль должен содержать минимум 8 символов'),
+    z.string().length(0)  // Пустая строка
+  ]).optional(),
   phone: z.string().optional(),
 });
 
@@ -100,6 +103,7 @@ export default function CompaniesPage() {
   const [companyAdmins, setCompanyAdmins] = useState<any[]>([]);
   const [isAddingAdmin, setIsAddingAdmin] = useState(false);
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
+  const [editingAdmin, setEditingAdmin] = useState<any | null>(null);
   
   // Используем встроенную форму для админа
   const adminForm = useForm<AdminFormValues>({
@@ -168,41 +172,22 @@ export default function CompaniesPage() {
     setIsLoadingAdmins(true);
     try {
       const admins = await companyService.getCompanyAdmins(company.id.toString());
+      setCompanyAdmins(admins);
       console.log('Данные администраторов:', admins);
       
       if (admins.length > 0) {
-        console.log('Детальная структура первого администратора:', JSON.stringify(admins[0], null, 2));
-        // Выведем каждое поле объекта администратора
-        Object.keys(admins[0]).forEach(key => {
-          console.log(`Поле ${key}:`, admins[0][key]);
-        });
-      }
-      
-      // Добавим поле userName к каждому администратору
-      const adminsWithNames = await Promise.all(
-        admins.map(async (admin) => {
-          try {
-            // Используем userprofile.id
-            if (admin.id) {
-              console.log(`Запрашиваем данные для профиля с ID: ${admin.id}`);
-              const userProfile = await authService.getUserById(admin.id.toString());
-              console.log('Полученные данные пользователя:', userProfile);
-              return {
-                ...admin,
-                userName: userProfile ? 
-                  `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : 
-                  null
-              };
-            }
-            return admin;
-          } catch (error) {
-            console.error(`Ошибка при получении данных пользователя с ID ${admin.id}:`, error);
-            return admin;
+        const firstAdmin = admins[0];
+        console.log('Детальная структура первого администратора:', JSON.stringify(firstAdmin, null, 2));
+        
+        // Вывод всех полей объекта
+        for (const key in firstAdmin) {
+          if (key === 'user' && firstAdmin[key]) {
+            console.log(`Поле ${key}:`, firstAdmin[key]);
+          } else {
+            console.log(`Поле ${key}: – ${JSON.stringify(firstAdmin[key])}`);
           }
-        })
-      );
-      
-      setCompanyAdmins(adminsWithNames);
+        }
+      }
     } catch (error) {
       console.error('Ошибка при загрузке администраторов:', error);
     } finally {
@@ -216,11 +201,30 @@ export default function CompaniesPage() {
   };
   
   const handleAddAdmin = () => {
+    setEditingAdmin(null); // Очищаем редактируемого админа, чтобы перейти в режим создания
+    adminForm.reset(); // Сбрасываем форму
+    setIsAdminDialogOpen(true);
+  };
+  
+  const handleEditAdmin = (admin: any) => {
+    setEditingAdmin(admin);
+    
+    // Заполняем форму данными администратора
+    adminForm.reset({
+      email: admin.user?.email || '',
+      username: admin.user?.username || '',
+      first_name: admin.user?.firstName || '',
+      last_name: admin.user?.lastName || '',
+      password: '', // Пароль не заполняем при редактировании
+      phone: admin.phone || '',
+    });
+    
     setIsAdminDialogOpen(true);
   };
   
   const handleCloseAdminDialog = () => {
     setIsAdminDialogOpen(false);
+    setEditingAdmin(null);
   };
   
   const handleSubmitAdmin = async (data: AdminFormValues) => {
@@ -228,23 +232,39 @@ export default function CompaniesPage() {
     
     setIsAddingAdmin(true);
     try {
-      // Преобразуем данные формы в AdminFormData
-      const adminData: AdminFormData = {
-        email: data.email,
-        username: data.username,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        password: data.password,
-        phone: data.phone
-      };
+      // Очищаем пустые поля и формируем данные
+      const adminData: Partial<AdminFormData> = {};
       
-      await companyService.addCompanyAdmin(selectedCompany.id.toString(), adminData);
+      if (data.email) adminData.email = data.email;
+      if (data.username) adminData.username = data.username;
+      if (data.first_name) adminData.first_name = data.first_name;
+      if (data.last_name) adminData.last_name = data.last_name;
+      if (data.phone) adminData.phone = data.phone;
+      if (data.password) adminData.password = data.password;
+      
+      if (editingAdmin) {
+        // Режим редактирования
+        await companyService.updateCompanyAdmin(
+          selectedCompany.id.toString(), 
+          editingAdmin.id.toString(), 
+          adminData
+        );
+      } else {
+        // Режим создания
+        await companyService.addCompanyAdmin(
+          selectedCompany.id.toString(), 
+          adminData as AdminFormData
+        );
+      }
+      
+      // Обновляем список администраторов
       const admins = await companyService.getCompanyAdmins(selectedCompany.id.toString());
       setCompanyAdmins(admins);
       setIsAdminDialogOpen(false);
       adminForm.reset(); // Сбрасываем форму
+      setEditingAdmin(null);
     } catch (error) {
-      console.error('Ошибка при добавлении администратора:', error);
+      console.error('Ошибка при сохранении администратора:', error);
     } finally {
       setIsAddingAdmin(false);
     }
@@ -515,44 +535,48 @@ export default function CompaniesPage() {
                     <TableBody>
                       {companyAdmins.map((admin) => (
                         <TableRow key={admin.id}>
-                          <TableCell>
-                            {admin.user && `${admin.user.firstName || ''} ${admin.user.lastName || ''}`.trim() || 'Без имени'}
-                          </TableCell>
-                          <TableCell>
-                            {admin.user && admin.user.email || '—'}
-                          </TableCell>
+                          <TableCell>{`${admin.user?.firstName || ''} ${admin.user?.lastName || ''}`}</TableCell>
+                          <TableCell>{admin.user?.email || ''}</TableCell>
                           <TableCell className="text-right">
-                            <AlertDialog open={deleteAdminId === admin.id}>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => handleDeleteAdmin(admin.id)}
-                                >
-                                  <Trash2Icon className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Удаление администратора</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Вы уверены, что хотите удалить администратора
-                                    {admin.user && ` ${admin.user.firstName || ''} ${admin.user.lastName || ''}`.trim() || ' без имени'}?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => setDeleteAdminId(null)}>
-                                    Отмена
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={confirmDeleteAdmin}
-                                    className="bg-red-500 hover:bg-red-600"
+                            <div className="flex justify-end space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditAdmin(admin)}
+                              >
+                                <EditIcon className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog open={deleteAdminId === admin.id}>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleDeleteAdmin(admin.id)}
                                   >
-                                    Удалить
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                                    <Trash2Icon className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Удаление администратора</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Вы уверены, что хотите удалить администратора {admin.user?.firstName || ''} {admin.user?.lastName || ''}?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setDeleteAdminId(null)}>
+                                      Отмена
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={confirmDeleteAdmin}
+                                      className="bg-red-500 hover:bg-red-600"
+                                    >
+                                      Удалить
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -571,15 +595,20 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Диалог добавления администратора */}
+      {/* Диалог добавления/редактирования администратора */}
       <Dialog open={isAdminDialogOpen} onOpenChange={(open) => {
         if (!open) handleCloseAdminDialog();
       }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Добавить администратора для компании "{selectedCompany?.name}"</DialogTitle>
+            <DialogTitle>
+              {editingAdmin ? 'Редактировать администратора' : 'Добавить администратора'}
+            </DialogTitle>
             <DialogDescription>
-              Заполните форму для создания нового администратора компании
+              {editingAdmin 
+                ? `Редактирование администратора для компании "${selectedCompany?.name}"`
+                : `Добавление администратора для компании "${selectedCompany?.name}"`
+              }
             </DialogDescription>
           </DialogHeader>
           <Form {...adminForm}>
@@ -654,7 +683,7 @@ export default function CompaniesPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Пароль</FormLabel>
+                    <FormLabel>{editingAdmin ? "Новый пароль (оставьте пустым, чтобы не менять)" : "Пароль"}</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="********" {...field} />
                     </FormControl>
@@ -670,10 +699,10 @@ export default function CompaniesPage() {
                   {isAddingAdmin ? (
                     <>
                       <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                      Сохранение...
+                      {editingAdmin ? 'Сохранение...' : 'Добавление...'}
                     </>
                   ) : (
-                    'Добавить'
+                    editingAdmin ? 'Сохранить' : 'Добавить'
                   )}
                 </Button>
               </DialogFooter>

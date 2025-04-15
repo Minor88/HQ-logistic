@@ -1,21 +1,22 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    UserProfileViewSet, CompanyViewSet, ShipmentViewSet, RequestViewSet,
-    FinanceList, FinanceDetail, ShipmentCalculationViewSet,
-    ShipmentStatusViewSet, RequestStatusViewSet, AnalyticsSummaryView,
-    BalanceView, CounterpartyBalanceView, EmailView
+    UserProfileViewSet, ShipmentViewSet, RequestViewSet, 
+    ArticleList, ArticleDetail, FinanceList, FinanceDetail, 
+    ShipmentCalculationViewSet, CompanyViewSet, ShipmentStatusViewSet,
+    RequestStatusViewSet, AnalyticsSummaryView, BalanceView,
+    CounterpartyBalanceView, EmailView
 )
 
-# Создаем роутер DRF для автоматической маршрутизации ViewSets
+# Настройка маршрутизации API
 router = DefaultRouter()
-router.register(r'user-profiles', UserProfileViewSet)
-router.register(r'companies', CompanyViewSet)
+router.register(r'userprofiles', UserProfileViewSet)
 router.register(r'shipments', ShipmentViewSet)
 router.register(r'requests', RequestViewSet)
+router.register(r'shipment-calculations', ShipmentCalculationViewSet)
+router.register(r'companies', CompanyViewSet)
 router.register(r'shipment-statuses', ShipmentStatusViewSet)
 router.register(r'request-statuses', RequestStatusViewSet)
-router.register(r'shipment-calculations', ShipmentCalculationViewSet)
 
 urlpatterns = [
     # Включаем все маршруты из роутера

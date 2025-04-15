@@ -74,7 +74,7 @@ const authService = {
       
       try {
         // Получаем профиль пользователя с ролью и другими данными
-        const profileResponse = await api.get<any>('/user-profiles/me/');
+        const profileResponse = await api.get<any>('/userprofiles/me/');
         const profileData = profileResponse.data;
         
         console.log('Профиль пользователя:', profileData);
@@ -82,13 +82,13 @@ const authService = {
         // Объединяем данные из обоих запросов
         const fullUserData = {
           ...userData,
-          role: profileData.userGroup,
-          first_name: profileData.user?.firstName || '',
-          last_name: profileData.user?.lastName || '',
+          role: profileData.userGroup || profileData.user_group,
+          first_name: profileData.user?.firstName || profileData.user?.first_name || '',
+          last_name: profileData.user?.lastName || profileData.user?.last_name || '',
           phone: profileData.phone,
           company: profileData.company ? {
             id: String(profileData.company),
-            name: profileData.companyName
+            name: profileData.companyName || profileData.company_name
           } : undefined
         };
         

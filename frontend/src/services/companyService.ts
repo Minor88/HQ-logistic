@@ -91,6 +91,14 @@ const companyService = {
    */
   removeCompanyAdmin: async (companyId: string, adminId: string): Promise<void> => {
     await api.delete(`/companies/${companyId}/admins/${adminId}/`);
+  },
+
+  /**
+   * Обновление данных администратора компании
+   */
+  updateCompanyAdmin: async (companyId: string, adminId: string, adminData: Partial<AdminFormData>): Promise<UserProfile> => {
+    const response = await api.put<UserProfile>(`/companies/${companyId}/update_admin/${adminId}/`, adminData);
+    return response.data;
   }
 };
 

@@ -58,7 +58,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         Для любых изменений (создание, редактирование, удаление) - только суперпользователи.
         Для просмотра - суперпользователи и администраторы (админы видят только свою компанию).
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'admins', 'add_admin', 'remove_admin']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'admins', 'add_admin', 'remove_admin', 'update_admin']:
             # Для модификации данных - только суперпользователи
             return [IsSuperuser()]
         
@@ -223,6 +223,81 @@ class CompanyViewSet(viewsets.ModelViewSet):
             user.delete()
             
             return Response(status=status.HTTP_204_NO_CONTENT)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "Администратор не найден"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=True, methods=['put'], url_path=r'update_admin/(?P<user_id>\d+)')
+    def update_admin(self, request, pk=None, user_id=None):
+        """
+        Обновляет данные администратора компании.
+        
+        Позволяет изменить email, имя, фамилию, телефон и пароль администратора.
+        Пароль обновляется только если он предоставлен в запросе.
+        """
+        company = self.get_object()
+        
+        try:
+            profile = UserProfile.objects.get(id=user_id, company=company, user_group='admin')
+            user = profile.user
+            
+            # Получаем данные из запроса
+            email = request.data.get('email')
+            username = request.data.get('username')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            phone = request.data.get('phone')
+            password = request.data.get('password')
+            
+            # Проверяем email на уникальность, если он был изменен
+            if email and email != user.email:
+                if User.objects.filter(email=email).exclude(id=user.id).exists():
+                    return Response(
+                        {"error": "Пользователь с таким email уже существует"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                user.email = email
+            
+            # Проверяем username на уникальность, если он был изменен
+            if username and username != user.username:
+                if User.objects.filter(username=username).exclude(id=user.id).exists():
+                    return Response(
+                        {"error": "Пользователь с таким логином уже существует"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                user.username = username
+            
+            # Обновляем остальные поля, если они были предоставлены
+            if first_name is not None:
+                user.first_name = first_name
+            
+            if last_name is not None:
+                user.last_name = last_name
+            
+            # Обновляем пароль только если он предоставлен и не пустой
+            if password and password.strip():
+                user.set_password(password)
+            
+            # Обновляем поле name в профиле пользователя
+            if first_name is not None or last_name is not None:
+                new_first_name = first_name if first_name is not None else user.first_name
+                new_last_name = last_name if last_name is not None else user.last_name
+                profile.name = f"{new_first_name} {new_last_name}".strip()
+            
+            # Обновляем телефон в профиле
+            if phone is not None:
+                profile.phone = phone
+            
+            # Сохраняем изменения
+            user.save()
+            profile.save()
+            
+            # Возвращаем обновленные данные
+            serializer = UserProfileSerializer(profile)
+            return Response(serializer.data)
+            
         except UserProfile.DoesNotExist:
             return Response(
                 {"error": "Администратор не найден"}, 
