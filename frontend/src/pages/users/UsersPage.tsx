@@ -50,6 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import userService, { UserFormData } from '@/services/userService';
 import { PaginatedResponse, UserProfile, UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 // Схема валидации для формы пользователя
 const userSchema = z.object({
@@ -63,9 +64,13 @@ const userSchema = z.object({
 });
 
 export default function UsersPage() {
-  // Состояние списка пользователей
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
+  // Состояние для пользователей с учетом пагинации
+  const [usersData, setUsersData] = useState<PaginatedResponse<UserProfile>>({
+    count: 0,
+    next: null,
+    previous: null,
+    results: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -91,61 +96,42 @@ export default function UsersPage() {
     },
   });
 
+  // Проверка прав доступа
+  const canManageUsers = user?.role === 'admin' || user?.role === 'boss' || user?.role === 'superuser';
+
   // Загрузка списка пользователей
   const loadUsers = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
       const data = await userService.getCompanyUsers();
-      
-      if (data && data.results) {
-        setUsers(data.results);
-        setFilteredUsers(data.results);
-      } else if (Array.isArray(data)) {
-        setUsers(data);
-        setFilteredUsers(data);
-      } else {
-        setUsers([]);
-        setFilteredUsers([]);
-      }
+      setUsersData(data);
     } catch (error) {
       console.error('Ошибка при загрузке пользователей:', error);
-      setUsers([]);
-      setFilteredUsers([]);
+      toast.error('Не удалось загрузить пользователей');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Загрузка пользователей при монтировании
   useEffect(() => {
     loadUsers();
   }, []);
 
-  // Фильтрация пользователей при изменении поискового запроса
-  useEffect(() => {
-    if (!users || !Array.isArray(users)) {
-      setFilteredUsers([]);
-      return;
-    }
+  // Фильтрация пользователей по поисковому запросу
+  const filteredUsers = usersData.results.filter(profile => {
+    if (!searchQuery) return true;
     
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const filtered = users.filter(
-        profile => 
-          profile.user.email.toLowerCase().includes(query) ||
-          profile.user.first_name.toLowerCase().includes(query) ||
-          profile.user.last_name.toLowerCase().includes(query) ||
-          (profile.phone && profile.phone.includes(query))
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
-    }
-  }, [searchQuery, users]);
-
-  // Проверка на доступность создания пользователей
-  const canManageUsers = user?.role === 'admin' || user?.role === 'boss';
+    const query = searchQuery.toLowerCase();
+    const firstName = profile.user?.firstName || profile.user?.first_name || '';
+    const lastName = profile.user?.lastName || profile.user?.last_name || '';
+    const email = profile.user?.email || '';
+    const username = profile.user?.username || '';
+    
+    return firstName.toLowerCase().includes(query) || 
+           lastName.toLowerCase().includes(query) ||
+           email.toLowerCase().includes(query) ||
+           username.toLowerCase().includes(query);
+  });
 
   // Обработчик создания пользователя
   const handleAddUser = async (data: UserFormData) => {

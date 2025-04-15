@@ -20,6 +20,172 @@ paths:
               schema:
                 $ref: '#/components/schemas/AnalyticsSummary'
           description: ''
+  /api/articles/:
+    get:
+      operationId: articlesList
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - articles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArticleList'
+          description: ''
+    post:
+      operationId: articlesCreate
+      tags:
+      - articles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/articles/{id}/:
+    get:
+      operationId: articlesRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - articles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    put:
+      operationId: articlesUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - articles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    patch:
+      operationId: articlesPartialUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - articles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    delete:
+      operationId: articlesDestroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - articles
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/auth/jwt/create/:
     post:
       operationId: authJwtCreateCreate
@@ -2940,6 +3106,47 @@ components:
       - total_requests
       - total_revenue
       - total_shipments
+    Article:
+      type: object
+      description: |-
+        Сериализатор для статей расходов/доходов.
+        Включает дополнительное поле для отображения названия компании.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Наименование статьи
+          maxLength: 255
+        company:
+          type: integer
+          title: Компания
+        company_name:
+          type: string
+          readOnly: true
+      required:
+      - company
+      - company_name
+      - id
+      - name
+    ArticleRequest:
+      type: object
+      description: |-
+        Сериализатор для статей расходов/доходов.
+        Включает дополнительное поле для отображения названия компании.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Наименование статьи
+          maxLength: 255
+        company:
+          type: integer
+          title: Компания
+      required:
+      - company
+      - name
     Balance:
       type: object
       description: Сериализатор для баланса компании.
@@ -3503,6 +3710,29 @@ components:
       description: |-
         * `in` - Входящий
         * `out` - Исходящий
+    PaginatedArticleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
     PaginatedCompanyList:
       type: object
       required:
@@ -3739,6 +3969,20 @@ components:
       - new_password
       - token
       - uid
+    PatchedArticleRequest:
+      type: object
+      description: |-
+        Сериализатор для статей расходов/доходов.
+        Включает дополнительное поле для отображения названия компании.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Наименование статьи
+          maxLength: 255
+        company:
+          type: integer
+          title: Компания
     PatchedCompanyRequest:
       type: object
       description: |-
@@ -4929,10 +5173,15 @@ components:
           readOnly: true
           nullable: true
           title: Телефон
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активен
       required:
       - company
       - company_name
       - id
+      - is_active
       - phone
       - role_display
       - user

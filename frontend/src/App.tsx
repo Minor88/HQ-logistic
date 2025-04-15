@@ -13,6 +13,7 @@ import Forbidden from "./pages/Forbidden";
 import NotFound from "./pages/NotFound";
 import Companies from "./pages/companies";
 import UsersPage from "./pages/users/UsersPage";
+import SettingsPage from "./pages/settings/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,11 @@ const App = () => (
             <Route path="/users" element={
               <MainLayout requiredRoles={["superuser", "admin"]}>
                 <UsersPage />
+              </MainLayout>
+            } />
+            <Route path="/settings" element={
+              <MainLayout requiredRoles={["superuser", "admin"]}>
+                <SettingsPage />
               </MainLayout>
             } />
             <Route path="*" element={<NotFound />} />

@@ -31,6 +31,10 @@ urlpatterns = [
     path('finance/balance/', BalanceView.as_view(), name='balance'),
     path('finance/counterparty-balance/', CounterpartyBalanceView.as_view(), name='counterparty-balance'),
     
+    # Маршруты для статей расходов/доходов
+    path('articles/', ArticleList.as_view(), name='article-list'),
+    path('articles/<int:pk>/', ArticleDetail.as_view(), name='article-detail'),
+    
     # Маршруты для email
     path('email/send/', EmailView.as_view(), name='send-email'),
 ]
