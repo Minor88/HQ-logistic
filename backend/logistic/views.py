@@ -314,7 +314,23 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsSuperuser, IsCompanyAdmin, IsCompanyBoss]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        
+        has_perm = False
+        for permission_class in [IsSuperuser, IsCompanyAdmin, IsCompanyBoss]:
+            permission = permission_class()
+            if permission.has_permission(request, self):
+                has_perm = True
+                break
+        
+        if not has_perm:
+            self.permission_denied(
+                request,
+                message="У вас нет прав для выполнения этой операции."
+            )
     
     def get_queryset(self):
         """
@@ -323,12 +339,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         Суперпользователи видят всех пользователей, администраторы и руководители - 
         только пользователей своей компании.
         """
-        # Суперпользователи видят всех пользователей
         if self.request.user.is_superuser or (hasattr(self.request.user, 'userprofile') and 
                                              self.request.user.userprofile.user_group == 'superuser'):
             return UserProfile.objects.all()
         
-        # Администраторы и руководители видят только пользователей своей компании
         if hasattr(self.request.user, 'userprofile') and self.request.user.userprofile.company:
             company = self.request.user.userprofile.company
             return UserProfile.objects.filter(company=company)
@@ -342,7 +356,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         
         Используется для получения списка клиентов компании.
         """
-        # Получаем всех клиентов на основе поля user_group
         queryset = self.get_queryset().filter(user_group='client', is_active=True)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
@@ -359,6 +372,73 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(request.user.userprofile)
             return Response(serializer.data)
         return Response({'detail': 'Профиль пользователя не найден.'}, status=404)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsCompanyAdmin])
+    def create_user(self, request):
+        """
+        Создает нового пользователя компании с заданной ролью.
+        
+        Доступно только для администраторов и руководителей компаний.
+        Администратор может создавать пользователей только для своей компании.
+        """
+        email = request.data.get('email')
+        username = request.data.get('username', email)
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        phone = request.data.get('phone', '')
+        password = request.data.get('password')
+        user_group = request.data.get('user_group')
+        
+        if not email or not password or not user_group:
+            return Response(
+                {"error": "Email, пароль и роль пользователя обязательны"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        allowed_roles = ['boss', 'manager', 'warehouse', 'client']
+        if user_group not in allowed_roles:
+            return Response(
+                {"error": f"Недопустимая роль пользователя. Разрешены: {', '.join(allowed_roles)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {"error": "Пользователь с таким email уже существует"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Пользователь с таким логином уже существует"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        company = request.user.userprofile.company
+        if not company:
+            return Response(
+                {"error": "Ваш профиль не привязан к компании"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        profile = UserProfile.objects.create(
+            user=user,
+            company=company,
+            user_group=user_group,
+            phone=phone,
+            name=f"{first_name} {last_name}".strip()
+        )
+        
+        serializer = UserProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ShipmentStatusViewSet(viewsets.ModelViewSet):
@@ -558,23 +638,20 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         """
         shipment_instance = self.get_object()
         files = request.FILES.getlist('files')
-        folder_id = request.data.get('folder_id')  # Получаем folder_id из запроса
+        folder_id = request.data.get('folder_id')
 
         if not files:
             return Response({"error": "No files provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Если folder_id не null, получаем папку; иначе оставляем folder как None для корня
         folder = None
         if folder_id:
             folder = ShipmentFolder.objects.get(id=folder_id)
 
-        # Определяем путь для хранения файлов
         folder_path = os.path.join(
             settings.MEDIA_ROOT, 
             f'logistic/shipments/{shipment_instance.id}/{folder.name if folder else ""}'
         )
 
-        # Создаем папку, если она не существует
         os.makedirs(folder_path, exist_ok=True)
 
         created_files = []

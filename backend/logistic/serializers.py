@@ -38,8 +38,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone']
-        read_only_fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone']
+        fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone', 'is_active']
+        read_only_fields = ['id', 'user', 'company', 'company_name', 'user_group', 'role_display', 'phone', 'is_active']
 
 
 class RequestFileSerializer(serializers.ModelSerializer):

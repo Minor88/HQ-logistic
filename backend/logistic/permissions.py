@@ -14,14 +14,25 @@ def check_role_hierarchy(user, required_role):
     5. warehouse
     6. client
     """
-    if not user.is_authenticated or not hasattr(user, 'userprofile'):
+    print(f"==== CHECK_ROLE_HIERARCHY ====")
+    print(f"User: {user.username} (ID: {user.id})")
+    print(f"Required role: {required_role}")
+    
+    if not user.is_authenticated:
+        print("User is not authenticated")
+        return False
+        
+    if not hasattr(user, 'userprofile'):
+        print("User has no userprofile")
         return False
         
     # Суперюзеры Django всегда имеют все права
     if user.is_superuser:
+        print("User is Django superuser")
         return True
         
     user_role = user.userprofile.user_group
+    print(f"User role: {user_role}")
     
     # Карта иерархии ролей (ключ роль имеет доступ ко всем ролям в значении)
     role_hierarchy = {
@@ -34,7 +45,10 @@ def check_role_hierarchy(user, required_role):
     }
     
     # Если роль пользователя есть в иерархии и требуемая роль в списке доступных
-    return user_role in role_hierarchy and required_role in role_hierarchy.get(user_role, [])
+    result = user_role in role_hierarchy and required_role in role_hierarchy.get(user_role, [])
+    print(f"Check result: {result}")
+    print(f"==== END CHECK_ROLE_HIERARCHY ====")
+    return result
 
 class IsSuperuser(permissions.BasePermission):
     """
@@ -47,10 +61,23 @@ class IsSuperuser(permissions.BasePermission):
     Эти пользователи имеют полный доступ ко всем данным во всех компаниях.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
+        print(f"==== IsSuperuser.has_permission ====")
+        print(f"User: {request.user.username} (ID: {request.user.id})")
+        print(f"Is authenticated: {request.user.is_authenticated}")
+        print(f"Is superuser: {request.user.is_superuser}")
+        
+        if hasattr(request.user, 'userprofile'):
+            print(f"User profile exists, user_group: {request.user.userprofile.user_group}")
+        else:
+            print(f"User has no profile")
+            
+        result = request.user.is_authenticated and (
             request.user.is_superuser or 
             hasattr(request.user, 'userprofile') and request.user.userprofile.user_group == 'superuser'
         )
+        print(f"Permission result: {result}")
+        print(f"==== END IsSuperuser.has_permission ====")
+        return result
         
     def has_object_permission(self, request, view, obj):
         """
@@ -73,7 +100,21 @@ class IsCompanyAdmin(permissions.BasePermission):
     но не могут видеть или изменять данные других компаний.
     """
     def has_permission(self, request, view):
-        return check_role_hierarchy(request.user, 'admin')
+        print(f"==== IsCompanyAdmin.has_permission ====")
+        print(f"User: {request.user.username} (ID: {request.user.id})")
+        print(f"Is authenticated: {request.user.is_authenticated}")
+        print(f"Is superuser: {request.user.is_superuser}")
+        
+        if hasattr(request.user, 'userprofile'):
+            print(f"User profile exists, user_group: {request.user.userprofile.user_group}")
+            print(f"User company: {request.user.userprofile.company}")
+        else:
+            print(f"User has no profile")
+            
+        result = check_role_hierarchy(request.user, 'admin')
+        print(f"Permission result: {result}")
+        print(f"==== END IsCompanyAdmin.has_permission ====")
+        return result
     
     def has_object_permission(self, request, view, obj):
         """
@@ -105,7 +146,21 @@ class IsCompanyBoss(permissions.BasePermission):
     включая управление финансами и аналитику.
     """
     def has_permission(self, request, view):
-        return check_role_hierarchy(request.user, 'boss')
+        print(f"==== IsCompanyBoss.has_permission ====")
+        print(f"User: {request.user.username} (ID: {request.user.id})")
+        print(f"Is authenticated: {request.user.is_authenticated}")
+        print(f"Is superuser: {request.user.is_superuser}")
+        
+        if hasattr(request.user, 'userprofile'):
+            print(f"User profile exists, user_group: {request.user.userprofile.user_group}")
+            print(f"User company: {request.user.userprofile.company}")
+        else:
+            print(f"User has no profile")
+            
+        result = check_role_hierarchy(request.user, 'boss')
+        print(f"Permission result: {result}")
+        print(f"==== END IsCompanyBoss.has_permission ====")
+        return result
     
     def has_object_permission(self, request, view, obj):
         """

@@ -895,6 +895,52 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/companies/{id}/update_admin/{userId}/:
+    put:
+      operationId: companiesUpdateAdminUpdate
+      description: |-
+        Обновляет данные администратора компании.
+
+        Позволяет изменить email, имя, фамилию, телефон и пароль администратора.
+        Пароль обновляется только если он предоставлен в запросе.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Компания.
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
   /api/email/send/:
     post:
       operationId: emailSendCreate
@@ -2547,9 +2593,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
-  /api/user-profiles/:
+  /api/userprofiles/:
     get:
-      operationId: userProfilesList
+      operationId: userprofilesList
       description: |-
         ViewSet для управления профилями пользователей.
 
@@ -2575,7 +2621,7 @@ paths:
         schema:
           type: string
       tags:
-      - user-profiles
+      - userprofiles
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2588,14 +2634,14 @@ paths:
                 $ref: '#/components/schemas/PaginatedUserProfileList'
           description: ''
     post:
-      operationId: userProfilesCreate
+      operationId: userprofilesCreate
       description: |-
         ViewSet для управления профилями пользователей.
 
         Обеспечивает стандартные CRUD-операции для модели UserProfile.
         Доступен только для администраторов и руководителей компаний.
       tags:
-      - user-profiles
+      - userprofiles
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -2619,9 +2665,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
-  /api/user-profiles/{id}/:
+  /api/userprofiles/{id}/:
     get:
-      operationId: userProfilesRetrieve
+      operationId: userprofilesRetrieve
       description: |-
         ViewSet для управления профилями пользователей.
 
@@ -2635,7 +2681,7 @@ paths:
         description: A unique integer value identifying this Профиль пользователя.
         required: true
       tags:
-      - user-profiles
+      - userprofiles
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2648,7 +2694,7 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
     put:
-      operationId: userProfilesUpdate
+      operationId: userprofilesUpdate
       description: |-
         ViewSet для управления профилями пользователей.
 
@@ -2662,7 +2708,7 @@ paths:
         description: A unique integer value identifying this Профиль пользователя.
         required: true
       tags:
-      - user-profiles
+      - userprofiles
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -2687,7 +2733,7 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
     patch:
-      operationId: userProfilesPartialUpdate
+      operationId: userprofilesPartialUpdate
       description: |-
         ViewSet для управления профилями пользователей.
 
@@ -2701,7 +2747,7 @@ paths:
         description: A unique integer value identifying this Профиль пользователя.
         required: true
       tags:
-      - user-profiles
+      - userprofiles
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -2725,7 +2771,7 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
     delete:
-      operationId: userProfilesDestroy
+      operationId: userprofilesDestroy
       description: |-
         ViewSet для управления профилями пользователей.
 
@@ -2739,7 +2785,7 @@ paths:
         description: A unique integer value identifying this Профиль пользователя.
         required: true
       tags:
-      - user-profiles
+      - userprofiles
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2747,15 +2793,15 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/user-profiles/clients/:
+  /api/userprofiles/clients/:
     get:
-      operationId: userProfilesClientsRetrieve
+      operationId: userprofilesClientsRetrieve
       description: |-
         Возвращает список только тех пользователей, которые имеют роль 'client'.
 
         Используется для получения списка клиентов компании.
       tags:
-      - user-profiles
+      - userprofiles
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2767,16 +2813,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
-  /api/user-profiles/me/:
+  /api/userprofiles/create_user/:
+    post:
+      operationId: userprofilesCreateUserCreate
+      description: |-
+        Создает нового пользователя компании с заданной ролью.
+
+        Доступно только для администраторов и руководителей компаний.
+        Администратор может создавать пользователей только для своей компании.
+      tags:
+      - userprofiles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/userprofiles/me/:
     get:
-      operationId: userProfilesMeRetrieve
+      operationId: userprofilesMeRetrieve
       description: |-
         Возвращает профиль текущего пользователя.
 
         Используется для получения информации о текущем пользователе.
         Доступно для всех аутентифицированных пользователей.
       tags:
-      - user-profiles
+      - userprofiles
       security:
       - jwtAuth: []
       - cookieAuth: []

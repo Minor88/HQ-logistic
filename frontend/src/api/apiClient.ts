@@ -11,9 +11,9 @@ export const apiClient = axios.create({
 // Интерцептор для добавления токена аутентификации
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('access_token');
     if (token) {
-      config.headers['Authorization'] = `Token ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
@@ -28,8 +28,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Если 401 - пользователь не авторизован, можно перенаправить на страницу логина
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       // При необходимости можно добавить перенаправление на страницу логина
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

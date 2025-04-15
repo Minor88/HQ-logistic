@@ -1,4 +1,4 @@
-import { api, saveTokens, clearTokens } from '@/lib/api';
+import { apiClient } from '@/api/apiClient';
 import { 
   AuthResponse, 
   ChangePasswordRequest, 
@@ -23,14 +23,19 @@ const authService = {
     };
     
     // Получаем токены JWT
-    const response = await api.post<{access: string, refresh: string}>('/auth/jwt/create/', loginData);
+    const response = await apiClient.post<{access: string, refresh: string}>('/auth/jwt/create/', loginData);
     
     // Сразу сохраняем токены перед любыми другими запросами
     const tokens = {
       access: response.data.access,
       refresh: response.data.refresh
     };
-    saveTokens(tokens);
+    
+    // Сохраняем токены в localStorage
+    localStorage.setItem('access_token', tokens.access);
+    if (tokens.refresh) {
+      localStorage.setItem('refresh_token', tokens.refresh);
+    }
     
     // Теперь запрашиваем данные пользователя, уже с установленным токеном
     const user = await authService.getCurrentUser();
@@ -50,14 +55,16 @@ const authService = {
   logout: async (): Promise<void> => {
     // JWT не имеет специального эндпоинта для логаута
     // Просто очищаем токены на клиенте
-    clearTokens();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
   },
 
   /**
    * Регистрация нового пользователя (доступно только для админов и суперпользователей)
    */
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/users/', data);
+    const response = await apiClient.post<AuthResponse>('/auth/users/', data);
     return response.data;
   },
 
@@ -67,14 +74,14 @@ const authService = {
   getCurrentUser: async (): Promise<User> => {
     try {
       // Получаем базовые данные пользователя из Djoser
-      const userResponse = await api.get<any>('/auth/users/me/');
+      const userResponse = await apiClient.get<any>('/auth/users/me/');
       const userData = userResponse.data;
       
       console.log('Базовые данные пользователя:', userData);
       
       try {
         // Получаем профиль пользователя с ролью и другими данными
-        const profileResponse = await api.get<any>('/userprofiles/me/');
+        const profileResponse = await apiClient.get<any>('/userprofiles/me/');
         const profileData = profileResponse.data;
         
         console.log('Профиль пользователя:', profileData);
@@ -130,7 +137,7 @@ const authService = {
    * Обновление данных пользователя
    */
   updateUser: async (data: UpdateUserRequest): Promise<User> => {
-    const response = await api.put<User>('/auth/users/me/', data);
+    const response = await apiClient.put<User>('/auth/users/me/', data);
     return response.data;
   },
 
@@ -138,14 +145,14 @@ const authService = {
    * Смена пароля пользователя
    */
   changePassword: async (data: ChangePasswordRequest): Promise<void> => {
-    await api.post('/auth/users/set_password/', data);
+    await apiClient.post('/auth/users/set_password/', data);
   },
 
   /**
    * Получение списка пользователей (только для админов)
    */
   getUsers: async (): Promise<User[]> => {
-    const response = await api.get<User[]>('/user-profiles/');
+    const response = await apiClient.get<User[]>('/userprofiles/');
     return response.data;
   },
 
@@ -153,7 +160,7 @@ const authService = {
    * Получение пользователя по ID (только для админов)
    */
   getUserById: async (id: string): Promise<User> => {
-    const response = await api.get<User>(`/user-profiles/${id}/`);
+    const response = await apiClient.get<User>(`/userprofiles/${id}/`);
     return response.data;
   },
 
@@ -161,7 +168,7 @@ const authService = {
    * Обновление пользователя по ID (только для админов)
    */
   updateUserById: async (id: string, data: UpdateUserRequest): Promise<User> => {
-    const response = await api.put<User>(`/user-profiles/${id}/`, data);
+    const response = await apiClient.put<User>(`/userprofiles/${id}/`, data);
     return response.data;
   },
 
@@ -169,7 +176,7 @@ const authService = {
    * Удаление пользователя по ID (только для админов)
    */
   deleteUser: async (id: string): Promise<void> => {
-    await api.delete(`/user-profiles/${id}/`);
+    await apiClient.delete(`/userprofiles/${id}/`);
   }
 };
 

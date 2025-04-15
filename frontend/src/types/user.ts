@@ -19,8 +19,11 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
+  // Поддержка camelCase полей для совместимости с бэкендом
+  firstName?: string;
+  lastName?: string;
 }
 
 /**
@@ -29,11 +32,26 @@ export interface User {
 export interface UserProfile {
   id: number;
   user: User;
-  company: Company | null;
-  user_group: UserRole;
-  role_display: string;
+  company: number | Company | null;
+  company_name?: string;
+  companyName?: string;
+  user_group?: UserRole;
+  userGroup?: UserRole;
+  role_display?: string;
+  roleDisplay?: string;
   phone?: string;
-  is_active: boolean;
+  is_active?: boolean;
+  isActive?: boolean;
+}
+
+/**
+ * Интерфейс пагинированного ответа API
+ */
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }
 
 /**

@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Forbidden from "./pages/Forbidden";
 import NotFound from "./pages/NotFound";
 import Companies from "./pages/companies";
+import UsersPage from "./pages/users/UsersPage";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,11 @@ const App = () => (
             <Route path="/companies" element={
               <MainLayout requiredRoles={["superuser"]}>
                 <Companies />
+              </MainLayout>
+            } />
+            <Route path="/users" element={
+              <MainLayout requiredRoles={["superuser", "admin"]}>
+                <UsersPage />
               </MainLayout>
             } />
             <Route path="*" element={<NotFound />} />
