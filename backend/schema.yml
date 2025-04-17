@@ -1548,6 +1548,7 @@ paths:
   /api/requests/:
     get:
       operationId: requestsList
+      description: Получение списка заявок с отладкой
       parameters:
       - name: ordering
         required: false
@@ -1588,13 +1589,13 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1605,7 +1606,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestList'
+                $ref: '#/components/schemas/Request'
           description: ''
   /api/requests/{id}/:
     get:
@@ -1645,13 +1646,13 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestListRequest'
+              $ref: '#/components/schemas/RequestRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1662,7 +1663,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestList'
+                $ref: '#/components/schemas/Request'
           description: ''
     patch:
       operationId: requestsPartialUpdate
@@ -1679,13 +1680,13 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedRequestListRequest'
+              $ref: '#/components/schemas/PatchedRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedRequestListRequest'
+              $ref: '#/components/schemas/PatchedRequestRequest'
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedRequestListRequest'
+              $ref: '#/components/schemas/PatchedRequestRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1695,7 +1696,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestList'
+                $ref: '#/components/schemas/Request'
           description: ''
     delete:
       operationId: requestsDestroy
@@ -4198,12 +4199,8 @@ components:
           type: integer
           nullable: true
           title: Основание
-    PatchedRequestListRequest:
+    PatchedRequestRequest:
       type: object
-      description: |-
-        Сериализатор для списка заявок.
-        Включает основные поля для отображения в списке и дополнительные поля
-        для отображения связанных объектов.
       properties:
         number:
           type: integer
@@ -4211,9 +4208,20 @@ components:
           minimum: -2147483648
           nullable: true
           title: Номер
-        company:
+        status:
           type: integer
-          title: Компания
+          title: Статус
+        client:
+          type: integer
+          title: Клиент
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
         description:
           type: string
           nullable: true
@@ -4248,20 +4256,14 @@ components:
           format: double
           nullable: true
           title: Фактический объем
-        status:
-          type: integer
-          title: Статус
-        client:
-          type: integer
-          title: Клиент
-        manager:
-          type: integer
+        rate:
+          type: string
           nullable: true
-          title: Менеджер
-        shipment:
-          type: integer
+          title: Ставка
+        comment:
+          type: string
           nullable: true
-          title: Отправка
+          title: Комментарий
     PatchedRequestStatusRequest:
       type: object
       description: Сериализатор для статусов заявок.
@@ -4370,6 +4372,98 @@ components:
           format: email
           title: Адрес электронной почты
           maxLength: 254
+    Request:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        status:
+          type: integer
+          title: Статус
+        status_display:
+          type: string
+          readOnly: true
+        status_code:
+          type: string
+          readOnly: true
+        client:
+          type: integer
+          title: Клиент
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата обновления
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        rate:
+          type: string
+          nullable: true
+          title: Ставка
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+      required:
+      - client
+      - created_at
+      - id
+      - status
+      - status_code
+      - status_display
+      - updated_at
     RequestDetail:
       type: object
       description: |-
@@ -4599,6 +4693,14 @@ components:
           format: date-time
           readOnly: true
           title: Дата создания
+        rate:
+          type: string
+          nullable: true
+          title: Ставка
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
       required:
       - client
       - client_name
@@ -4674,9 +4776,85 @@ components:
           type: integer
           nullable: true
           title: Отправка
+        rate:
+          type: string
+          nullable: true
+          title: Ставка
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
       required:
       - client
       - company
+      - status
+    RequestRequest:
+      type: object
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Номер
+        status:
+          type: integer
+          title: Статус
+        client:
+          type: integer
+          title: Клиент
+        manager:
+          type: integer
+          nullable: true
+          title: Менеджер
+        shipment:
+          type: integer
+          nullable: true
+          title: Отправка
+        description:
+          type: string
+          nullable: true
+          title: Описание
+        warehouse_number:
+          type: string
+          nullable: true
+          title: Номер на складе
+          maxLength: 50
+        col_mest:
+          type: number
+          format: double
+          nullable: true
+          title: Количество мест
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный вес
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Заявленный объем
+        actual_weight:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический вес
+        actual_volume:
+          type: number
+          format: double
+          nullable: true
+          title: Фактический объем
+        rate:
+          type: string
+          nullable: true
+          title: Ставка
+        comment:
+          type: string
+          nullable: true
+          title: Комментарий
+      required:
+      - client
       - status
     RequestStatus:
       type: object

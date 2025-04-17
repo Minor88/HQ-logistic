@@ -15,6 +15,8 @@ import Companies from "./pages/companies";
 import UsersPage from "./pages/users/UsersPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import ShipmentsPage from "./pages/shipments/ShipmentsPage";
+import RequestsPage from "./pages/requests/RequestsPage";
+import FinancesPage from "./pages/finances/FinancesPage";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,16 @@ const App = () => (
             <Route path="/shipments" element={
               <MainLayout requiredRoles={["superuser", "admin", "boss", "manager", "warehouse", "client"]}>
                 <ShipmentsPage />
+              </MainLayout>
+            } />
+            <Route path="/requests" element={
+              <MainLayout requiredRoles={["superuser", "admin", "boss", "manager", "warehouse", "client"]}>
+                <RequestsPage />
+              </MainLayout>
+            } />
+            <Route path="/finances" element={
+              <MainLayout requiredRoles={["superuser", "admin", "boss", "client"]}>
+                <FinancesPage />
               </MainLayout>
             } />
             <Route path="*" element={<NotFound />} />

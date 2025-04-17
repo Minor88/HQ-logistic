@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status, generics
 from .models import UserProfile, Shipment, Request, RequestFile, ShipmentFile, ShipmentFolder, Article, Finance, ShipmentCalculation, Company, ShipmentStatus, RequestStatus
-from .serializers import UserProfileSerializer, ShipmentListSerializer, ShipmentDetailSerializer, RequestListSerializer, RequestDetailSerializer, RequestFileSerializer, ShipmentFileSerializer, ShipmentFolderSerializer, ArticleSerializer, FinanceListSerializer, FinanceDetailSerializer, ShipmentCalculationSerializer, CompanySerializer, ShipmentStatusSerializer, RequestStatusSerializer, AnalyticsSummarySerializer, BalanceSerializer, CounterpartyBalanceSerializer, EmailSerializer
+from .serializers import UserProfileSerializer, ShipmentListSerializer, ShipmentDetailSerializer, RequestListSerializer, RequestDetailSerializer, RequestFileSerializer, ShipmentFileSerializer, ShipmentFolderSerializer, ArticleSerializer, FinanceListSerializer, FinanceDetailSerializer, ShipmentCalculationSerializer, CompanySerializer, ShipmentStatusSerializer, RequestStatusSerializer, AnalyticsSummarySerializer, BalanceSerializer, CounterpartyBalanceSerializer, EmailSerializer, RequestSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes, renderer_classes, schema
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -837,6 +837,9 @@ class RequestViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return RequestDetailSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            # Используем RequestSerializer для создания и обновления
+            return RequestSerializer
         return RequestListSerializer
     
     def get_permissions(self):
@@ -881,7 +884,7 @@ class RequestViewSet(viewsets.ModelViewSet):
         """
         company = self.request.user.userprofile.company
         default_status = RequestStatus.objects.get(company=company, is_default=True)
-        serializer.save(status=default_status)
+        serializer.save(status=default_status, company=company)
         
     @action(detail=True, methods=['post'], url_path='update-status')
     def update_status(self, request, pk=None):
@@ -890,6 +893,10 @@ class RequestViewSet(viewsets.ModelViewSet):
         Доступно для сотрудников склада, менеджеров и выше.
         """
         request_obj = self.get_object()
+        
+        # Отладочный вывод входящих данных
+        print("Received data:", request.data)
+        
         status_id = request.data.get('status')
         comment = request.data.get('comment')
         actual_weight = request.data.get('actual_weight')
@@ -919,8 +926,17 @@ class RequestViewSet(viewsets.ModelViewSet):
                 
             request_obj.save()
             
-            # Возвращаем обновленную заявку
-            serializer = RequestListSerializer(request_obj) if self.action != 'retrieve' else RequestDetailSerializer(request_obj)
+            # После обновления, проверим, что данные были сохранены
+            print("Updated request fields:", {
+                'col_mest': request_obj.col_mest,
+                'declared_weight': request_obj.declared_weight,
+                'declared_volume': request_obj.declared_volume, 
+                'actual_weight': request_obj.actual_weight,
+                'actual_volume': request_obj.actual_volume,
+            })
+            
+            # Используем RequestSerializer вместо RequestListSerializer
+            serializer = RequestSerializer(request_obj)
             return Response(serializer.data)
             
         except RequestStatus.DoesNotExist:
@@ -1033,6 +1049,47 @@ class RequestViewSet(viewsets.ModelViewSet):
             shutil.rmtree(folder_path)
 
         super().perform_destroy(instance)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Получение списка заявок с отладкой
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Отладочный вывод первой заявки, если она есть
+        if queryset.exists():
+            first_request = queryset.first()
+            print("DEBUG - Первая заявка из базы данных:")
+            print(f"ID: {first_request.id}")
+            print(f"Количество мест: {first_request.col_mest}")
+            print(f"Заявленный вес: {first_request.declared_weight}")
+            print(f"Заявленный объем: {first_request.declared_volume}")
+            print(f"Фактический вес: {first_request.actual_weight}")
+            print(f"Фактический объем: {first_request.actual_volume}")
+            print(f"Ставка: {first_request.rate}")
+            print(f"Комментарий: {first_request.comment}")
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            
+            # Отладочный вывод первого сериализованного объекта, если он есть
+            if serializer.data:
+                print("DEBUG - Первая заявка после сериализации:")
+                first_item = serializer.data[0]
+                print(f"ID: {first_item.get('id')}")
+                print(f"Количество мест: {first_item.get('col_mest')}")
+                print(f"Заявленный вес: {first_item.get('declared_weight')}")
+                print(f"Заявленный объем: {first_item.get('declared_volume')}")
+                print(f"Фактический вес: {first_item.get('actual_weight')}")
+                print(f"Фактический объем: {first_item.get('actual_volume')}")
+                print(f"Ставка: {first_item.get('rate')}")
+                print(f"Комментарий: {first_item.get('comment')}")
+                
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AnalyticsSummaryView(generics.GenericAPIView):

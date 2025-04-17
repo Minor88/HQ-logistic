@@ -229,6 +229,7 @@ class Request(models.Model):
     manager = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='manager_requests', verbose_name='Менеджер')
     shipment = models.ForeignKey(Shipment, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Отправка')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     
     def get_status_display(self):
         return self.status.name if self.status else None

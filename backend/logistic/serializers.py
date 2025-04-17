@@ -134,7 +134,8 @@ class RequestListSerializer(serializers.ModelSerializer):
             'id', 'number', 'company', 'company_name', 'description', 'warehouse_number', 
             'col_mest', 'declared_weight', 'declared_volume', 'actual_weight', 
             'actual_volume', 'status', 'status_display', 'client', 'client_name', 
-            'manager', 'manager_name', 'shipment', 'shipment_number', 'created_at'
+            'manager', 'manager_name', 'shipment', 'shipment_number', 'created_at',
+            'rate', 'comment'
         ]
         read_only_fields = ['created_at']
 
@@ -148,7 +149,7 @@ class RequestDetailSerializer(RequestListSerializer):
     files = RequestFileSerializer(many=True, read_only=True)
     
     class Meta(RequestListSerializer.Meta):
-        fields = RequestListSerializer.Meta.fields + ['rate', 'comment', 'files']
+        fields = RequestListSerializer.Meta.fields + ['files']
 
 
 class ShipmentStatusSerializer(serializers.ModelSerializer):
@@ -260,7 +261,8 @@ class RequestSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'number', 'status', 'status_display', 'status_code',
             'client', 'manager', 'shipment', 'created_at', 'updated_at',
-            'rate', 'comment'
+            'description', 'warehouse_number', 'col_mest', 'declared_weight', 
+            'declared_volume', 'actual_weight', 'actual_volume', 'rate', 'comment'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
