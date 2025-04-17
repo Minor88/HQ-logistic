@@ -109,25 +109,6 @@ export function RequestsDataGrid({
   page = 0,
   pageSize = 10
 }: RequestsDataGridProps) {
-  // Добавляем отладочный вывод
-  console.log('Requests получены в таблицу:', requests);
-  
-  if (requests.length > 0) {
-    console.log('Пример данных первой заявки:', {
-      colMest: requests[0].colMest,
-      declaredWeight: requests[0].declaredWeight,
-      declaredVolume: requests[0].declaredVolume,
-      actualWeight: requests[0].actualWeight,
-      actualVolume: requests[0].actualVolume,
-      rate: requests[0].rate,
-      comment: requests[0].comment,
-      // Поля для обратной совместимости
-      places: requests[0].places,
-      weight: requests[0].weight,
-      volume: requests[0].volume
-    });
-  }
-  
   // Преобразуем данные для DataGrid (добавляем id, если его нет)
   const rows = requests.map(request => {
     // Убедимся, что у нас есть все необходимые поля для отображения
@@ -158,20 +139,6 @@ export function RequestsDataGrid({
     };
     return safeRequest;
   });
-  
-  // Отладочный вывод для преобразованных строк
-  console.log('Преобразованные строки для таблицы:', rows);
-  if (rows.length > 0) {
-    console.log('Пример преобразованных данных:', {
-      colMest: rows[0].colMest,
-      declaredWeight: rows[0].declaredWeight,
-      declaredVolume: rows[0].declaredVolume,
-      actualWeight: rows[0].actualWeight,
-      actualVolume: rows[0].actualVolume,
-      rate: rows[0].rate,
-      comment: rows[0].comment
-    });
-  }
 
   // Определяем колонки таблицы
   const columns: GridColDef[] = [

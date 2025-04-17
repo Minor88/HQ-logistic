@@ -220,23 +220,6 @@ export default function RequestsPage() {
           : null
       }));
       
-      // Отладочный вывод для проверки наличия числовых полей
-      if (enrichedResults.length > 0) {
-        console.log('Первая заявка (проверка числовых полей):', {
-          id: enrichedResults[0].id,
-          colMest: enrichedResults[0].colMest,
-          declaredWeight: enrichedResults[0].declaredWeight,
-          declaredVolume: enrichedResults[0].declaredVolume,
-          actualWeight: enrichedResults[0].actualWeight,
-          actualVolume: enrichedResults[0].actualVolume,
-          places: enrichedResults[0].places,
-          weight: enrichedResults[0].weight,
-          volume: enrichedResults[0].volume,
-          rate: enrichedResults[0].rate,
-          comment: enrichedResults[0].comment
-        });
-      }
-      
       setRequestsData({
         ...result,
         results: enrichedResults
@@ -264,7 +247,6 @@ export default function RequestsPage() {
   const loadClients = async () => {
     try {
       const response = await userService.getCompanyUsers();
-      console.log('Получены пользователи компании:', response);
       
       // Фильтруем только клиентов из списка пользователей
       const clientsList = response.results.filter(user => 
@@ -277,8 +259,6 @@ export default function RequestsPage() {
             ? `${user.user.firstName} ${user.user.lastName}`.trim()
             : user.user?.username || 'Неизвестный клиент'
       }));
-      
-      console.log('Отфильтрованные клиенты:', clientsList);
       
       setClients(clientsList);
     } catch (error) {
@@ -303,8 +283,6 @@ export default function RequestsPage() {
             ? `${user.user.firstName} ${user.user.lastName}`.trim()
             : user.user?.username || 'Неизвестный менеджер'
       }));
-      
-      console.log('Отфильтрованные менеджеры:', managersList);
       
       setManagers(managersList);
     } catch (error) {
