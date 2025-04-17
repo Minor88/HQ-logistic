@@ -289,51 +289,54 @@ export default function ShipmentsPage() {
               />
             </div>
             {canManageShipments && (
-              <Button onClick={() => {
-                // Найдем статус по умолчанию или первый в списке
-                const defaultStatus = statuses.find(s => s.isDefault);
-                const firstStatus = statuses[0];
-                const statusId = defaultStatus?.id || (firstStatus?.id || 0);
-                
-                form.reset({
-                  number: '',
-                  status: statusId,
-                  comment: '',
-                });
-                setIsAddDialogOpen(true);
-              }}>
+              <Button 
+                onClick={() => {
+                  // Найдем статус по умолчанию или первый в списке
+                  const defaultStatus = statuses.find(s => s.isDefault);
+                  const firstStatus = statuses[0];
+                  const statusId = defaultStatus?.id || (firstStatus?.id || 0);
+                  
+                  form.reset({
+                    number: '',
+                    status: statusId,
+                    comment: '',
+                  });
+                  setIsAddDialogOpen(true);
+                }}
+                className="bg-apple-purple hover:bg-apple-purple-dark text-white"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Добавить отправление
               </Button>
             )}
           </div>
           
-          <Table>
-            <TableHeader>
+          <Table className="border border-gray-100 rounded-lg overflow-hidden">
+            <TableHeader className="bg-apple-soft-gray">
               <TableRow>
-                <TableHead>Номер</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Дата создания</TableHead>
-                <TableHead>Комментарий</TableHead>
-                <TableHead>Действия</TableHead>
+                <TableHead className="text-apple-purple-dark font-medium">Номер</TableHead>
+                <TableHead className="text-apple-purple-dark font-medium">Статус</TableHead>
+                <TableHead className="text-apple-purple-dark font-medium">Дата создания</TableHead>
+                <TableHead className="text-apple-purple-dark font-medium">Комментарий</TableHead>
+                <TableHead className="text-apple-purple-dark font-medium">Действия</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={5} className="text-center py-8">
                     Загрузка...
                   </TableCell>
                 </TableRow>
               ) : filteredShipments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={5} className="text-center py-8">
                     Отправления не найдены
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredShipments.map((shipment) => (
-                  <TableRow key={shipment.id}>
+                  <TableRow key={shipment.id} className="hover:bg-apple-soft-gray/30 transition-colors">
                     <TableCell className="font-medium">
                       <div className="flex items-center">
                         <Truck className="h-4 w-4 mr-2 text-apple-purple" />

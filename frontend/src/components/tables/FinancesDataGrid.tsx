@@ -100,44 +100,50 @@ export function FinancesDataGrid({
       field: 'paymentDate', 
       headerName: 'Дата оплаты', 
       width: 130,
-      valueFormatter: (params) => 
-        formatDate(params.value as string) || 'Н/Д'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{formatDate(params.value as string) || 'Н/Д'}</span>
+      )
     },
     { 
       field: 'documentTypeDisplay', 
       headerName: 'Тип документа', 
       width: 130,
-      valueFormatter: (params) => 
-        params.value || '-'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? params.value : '-'}</span>
+      )
     },
     { 
       field: 'currencyDisplay', 
       headerName: 'Валюта', 
       width: 100,
-      valueFormatter: (params) => 
-        params.value || '-'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? params.value : '-'}</span>
+      )
     },
     { 
       field: 'amount', 
       headerName: 'Сумма', 
       width: 120,
       type: 'number',
-      valueFormatter: (params) => 
-        params.value !== undefined ? `${params.value.toFixed(2)}` : '-'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? `${Number(params.value).toFixed(2)}` : '-'}</span>
+      )
     },
     { 
       field: 'counterpartyName', 
       headerName: 'Контрагент', 
       width: 150,
-      valueFormatter: (params) => 
-        params.value || 'Не указан'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? params.value : 'Не указан'}</span>
+      )
     },
     { 
       field: 'articleName', 
       headerName: 'Статья', 
       width: 150,
-      valueFormatter: (params) => 
-        params.value || 'Не указана'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? params.value : 'Не указана'}</span>
+      )
     },
     { 
       field: 'isPaid', 
@@ -196,15 +202,17 @@ export function FinancesDataGrid({
       field: 'createdAt', 
       headerName: 'Дата создания', 
       width: 130,
-      valueFormatter: (params) => 
-        formatDate(params.value as string) || 'Н/Д'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{formatDate(params.value as string) || 'Н/Д'}</span>
+      )
     },
     { 
       field: 'createdByName', 
       headerName: 'Создал', 
       width: 150,
-      valueFormatter: (params) => 
-        params.value || 'Н/Д'
+      renderCell: (params: GridRenderCellParams<Finance>) => (
+        <span>{params.value !== undefined && params.value !== null ? params.value : 'Н/Д'}</span>
+      )
     },
     {
       field: 'actions',
@@ -245,7 +253,7 @@ export function FinancesDataGrid({
   return (
     <div className="w-full h-[600px]">
       <div className="mb-4 flex justify-end">
-        <Button onClick={onAddClick}>
+        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white">
           Добавить финансовую операцию
         </Button>
       </div>
@@ -271,12 +279,76 @@ export function FinancesDataGrid({
           },
         }}
         sx={{
-          boxShadow: 2,
-          border: 2,
-          borderColor: 'primary.light',
-          '& .MuiDataGrid-cell:hover': {
-            color: 'primary.main',
+          // Современный стильный дизайн с акцентными цветами
+          '& .MuiDataGrid-root': {
+            border: 'none',
+            borderRadius: '0.8rem',
+            fontFamily: 'sans-serif',
           },
+          '& .MuiDataGrid-main': {
+            borderRadius: '0.8rem',
+            overflow: 'visible',
+          },
+          '& .MuiDataGrid-cell': {
+            borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+          },
+          '& .MuiDataGrid-columnHeaders': {
+            backgroundColor: '#F1F0FB', // apple-soft-gray
+            color: '#6E59A5', // apple-purple-dark
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+          },
+          '& .MuiDataGrid-row': {
+            '&:nth-of-type(odd)': {
+              backgroundColor: 'rgba(241, 240, 251, 0.1)',
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(241, 240, 251, 0.3)',
+            },
+          },
+          '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
+            outline: 'none',
+          },
+          '& .MuiDataGrid-toolbarContainer': {
+            padding: '16px',
+            backgroundColor: 'white',
+            borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiDataGrid-footerContainer': {
+            backgroundColor: '#F1F0FB', // apple-soft-gray
+            borderTop: '1px solid rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiButton-root': {
+            color: '#9b87f5', // apple-purple
+            '&:hover': {
+              backgroundColor: 'rgba(155, 135, 245, 0.1)',
+            },
+          },
+          '& .MuiTablePagination-root': {
+            color: '#6E59A5', // apple-purple-dark
+          },
+          '& .MuiIconButton-root': {
+            color: '#9b87f5', // apple-purple
+          },
+          '& .MuiDataGrid-virtualScroller': {
+            backgroundColor: 'white',
+          },
+          '& .MuiDataGrid-horizontalScrollbar': {
+            zIndex: 0,
+          },
+          '& .MuiDataGrid-virtualScrollerRenderZone': {
+            position: 'relative',
+            zIndex: 0,
+          },
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
+          border: '1px solid rgba(224, 224, 224, 0.5)',
+          borderRadius: '0.8rem',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 0,
         }}
       />
     </div>

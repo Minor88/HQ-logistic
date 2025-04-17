@@ -435,7 +435,7 @@ export function RequestsDataGrid({
   return (
     <div className="w-full h-[600px]">
       <div className="mb-4 flex justify-end">
-        <Button onClick={onAddClick}>
+        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white">
           Добавить заявку
         </Button>
       </div>
@@ -466,12 +466,76 @@ export function RequestsDataGrid({
           },
         }}
         sx={{
-          boxShadow: 2,
-          border: 2,
-          borderColor: 'primary.light',
-          '& .MuiDataGrid-cell:hover': {
-            color: 'primary.main',
+          // Современный стильный дизайн с акцентными цветами
+          '& .MuiDataGrid-root': {
+            border: 'none',
+            borderRadius: '0.8rem',
+            fontFamily: 'sans-serif',
           },
+          '& .MuiDataGrid-main': {
+            borderRadius: '0.8rem',
+            overflow: 'visible',
+          },
+          '& .MuiDataGrid-cell': {
+            borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+          },
+          '& .MuiDataGrid-columnHeaders': {
+            backgroundColor: '#F1F0FB', // apple-soft-gray
+            color: '#6E59A5', // apple-purple-dark
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+          },
+          '& .MuiDataGrid-row': {
+            '&:nth-of-type(odd)': {
+              backgroundColor: 'rgba(241, 240, 251, 0.1)',
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(241, 240, 251, 0.3)',
+            },
+          },
+          '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
+            outline: 'none',
+          },
+          '& .MuiDataGrid-toolbarContainer': {
+            padding: '16px',
+            backgroundColor: 'white',
+            borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiDataGrid-footerContainer': {
+            backgroundColor: '#F1F0FB', // apple-soft-gray
+            borderTop: '1px solid rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiButton-root': {
+            color: '#9b87f5', // apple-purple
+            '&:hover': {
+              backgroundColor: 'rgba(155, 135, 245, 0.1)',
+            },
+          },
+          '& .MuiTablePagination-root': {
+            color: '#6E59A5', // apple-purple-dark
+          },
+          '& .MuiIconButton-root': {
+            color: '#9b87f5', // apple-purple
+          },
+          '& .MuiDataGrid-virtualScroller': {
+            backgroundColor: 'white',
+          },
+          '& .MuiDataGrid-horizontalScrollbar': {
+            zIndex: 0,
+          },
+          '& .MuiDataGrid-virtualScrollerRenderZone': {
+            position: 'relative',
+            zIndex: 0,
+          },
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
+          border: '1px solid rgba(224, 224, 224, 0.5)',
+          borderRadius: '0.8rem',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 0,
         }}
       />
     </div>

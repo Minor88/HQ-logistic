@@ -396,7 +396,7 @@ export default function RequestsPage() {
   const handleEditClick = (request: Request) => {
     setSelectedRequest(request);
     form.reset({
-      number: request.number,
+      number: typeof request.number === 'number' ? String(request.number) : (request.number || ''),
       status: request.status,
       client: request.client,
       manager: request.manager || undefined,
@@ -416,16 +416,25 @@ export default function RequestsPage() {
 
   // Обработчик обновления заявки
   const handleUpdateRequest = async (data: RequestFormData) => {
-    if (!selectedRequest) return;
+    console.log('handleUpdateRequest вызван с данными:', data);
+    if (!selectedRequest) {
+      console.error('selectedRequest не определен');
+      return;
+    }
     
     try {
-      // Убираем неопределенные значения
+      console.log('Подготовка данных для отправки');
+      // Убираем неопределенные значения и преобразуем номер в строку
       const updatedData = {
         ...data,
+        number: String(data.number)
       };
+      
+      console.log('Подготовленные данные:', updatedData);
       
       // Используем разные методы для обновления в зависимости от роли пользователя
       if (user?.role === 'warehouse') {
+        console.log('Обновление через updateRequestStatus для роли warehouse');
         // Для роли warehouse используем специальный метод, который позволяет менять только статус, комментарий и фактические вес/объем
         await requestService.updateRequestStatus(selectedRequest.id.toString(), {
           status: updatedData.status,
@@ -434,10 +443,12 @@ export default function RequestsPage() {
           actualVolume: updatedData.actualVolume
         });
       } else {
+        console.log('Обновление через updateRequest для роли', user?.role);
         // Для остальных ролей используем обычный метод обновления
         await requestService.updateRequest(selectedRequest.id.toString(), updatedData);
       }
       
+      console.log('Запрос успешно отправлен, обновление данных');
       await loadRequests();
       setIsEditDialogOpen(false);
       form.reset();
@@ -957,7 +968,13 @@ export default function RequestsPage() {
             <DialogTitle>Редактировать заявку</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleUpdateRequest)} className="space-y-4">
+            <form onSubmit={(e) => {
+              console.log('Форма отправлена');
+              console.log('Ошибки формы:', form.formState.errors);
+              const isValid = form.formState.isValid;
+              console.log('Форма валидна:', isValid);
+              form.handleSubmit(handleUpdateRequest)(e);
+            }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -1270,7 +1287,17 @@ export default function RequestsPage() {
                 >
                   Отмена
                 </Button>
-                <Button type="submit">Сохранить</Button>
+                <Button 
+                  type="button" 
+                  onClick={() => {
+                    console.log('Кнопка Сохранить нажата вручную');
+                    const formValues = form.getValues();
+                    console.log('Данные формы:', formValues);
+                    handleUpdateRequest(formValues);
+                  }}
+                >
+                  Сохранить
+                </Button>
               </DialogFooter>
             </form>
           </Form>
