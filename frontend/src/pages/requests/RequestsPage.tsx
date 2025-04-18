@@ -630,6 +630,7 @@ export default function RequestsPage() {
             onRowsPerPageChange={handleRowsPerPageChange}
             page={currentPage}
             pageSize={rowsPerPage}
+            rowCount={requestsData.count}
           />
         </CardContent>
       </Card>

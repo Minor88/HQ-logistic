@@ -11,11 +11,15 @@ export interface ColumnSettings {
 export interface TableSettings {
   columns: Record<string, ColumnSettings>;
   pageSize: number;
+  dataGrid?: Record<string, any>; // Дополнительные настройки для DataGrid
 }
 
 // Ключи для localStorage
-const getTableSettingsKey = (userId: string, tableId: string) => 
-  `table_settings_${userId}_${tableId}`;
+const getTableSettingsKey = (userId: string, tableId: string) => {
+  const key = `table_settings_${userId}_${tableId}`;
+  console.log('Ключ для localStorage:', key);
+  return key;
+};
 
 /**
  * Сервис для работы с настройками таблиц
@@ -24,8 +28,10 @@ const tableSettingsService = {
   // Сохранение настроек таблицы
   saveTableSettings: (userId: string, tableId: string, settings: TableSettings): void => {
     try {
+      const key = getTableSettingsKey(userId, tableId);
+      console.log('Сохранение настроек в localStorage:', { key, settings });
       localStorage.setItem(
-        getTableSettingsKey(userId, tableId),
+        key,
         JSON.stringify(settings)
       );
     } catch (error) {
@@ -36,13 +42,18 @@ const tableSettingsService = {
   // Загрузка настроек таблицы
   loadTableSettings: (userId: string, tableId: string): TableSettings | null => {
     try {
-      const savedSettings = localStorage.getItem(getTableSettingsKey(userId, tableId));
+      const key = getTableSettingsKey(userId, tableId);
+      const savedSettings = localStorage.getItem(key);
+      
+      console.log('Загрузка настроек из localStorage:', { key, savedSettings: savedSettings ? 'найдены' : 'не найдены' });
       
       if (!savedSettings) {
         return null;
       }
       
-      return JSON.parse(savedSettings) as TableSettings;
+      const parsedSettings = JSON.parse(savedSettings) as TableSettings;
+      console.log('Загруженные настройки:', parsedSettings);
+      return parsedSettings;
     } catch (error) {
       console.error('Ошибка при загрузке настроек таблицы:', error);
       return null;
@@ -52,7 +63,9 @@ const tableSettingsService = {
   // Удаление настроек таблицы
   removeTableSettings: (userId: string, tableId: string): void => {
     try {
-      localStorage.removeItem(getTableSettingsKey(userId, tableId));
+      const key = getTableSettingsKey(userId, tableId);
+      console.log('Удаление настроек из localStorage:', key);
+      localStorage.removeItem(key);
     } catch (error) {
       console.error('Ошибка при удалении настроек таблицы:', error);
     }
@@ -64,6 +77,7 @@ const tableSettingsService = {
     tableId: string, 
     defaultSettings: TableSettings
   ): void => {
+    console.log('Сброс настроек таблицы к значениям по умолчанию:', { userId, tableId, defaultSettings });
     tableSettingsService.saveTableSettings(userId, tableId, defaultSettings);
   }
 };
@@ -75,15 +89,20 @@ export const useTableSettings = (tableId: string) => {
   const { user } = useAuth();
   const userId = user?.id || 'anonymous';
 
+  console.log('useTableSettings инициализирован:', { userId, tableId, user });
+
   const saveSettings = (settings: TableSettings) => {
+    console.log('useTableSettings.saveSettings вызван:', { userId, tableId, settings });
     tableSettingsService.saveTableSettings(userId, tableId, settings);
   };
 
   const loadSettings = (): TableSettings | null => {
+    console.log('useTableSettings.loadSettings вызван:', { userId, tableId });
     return tableSettingsService.loadTableSettings(userId, tableId);
   };
 
   const resetSettings = (defaultSettings: TableSettings) => {
+    console.log('useTableSettings.resetSettings вызван:', { userId, tableId, defaultSettings });
     tableSettingsService.resetTableSettings(userId, tableId, defaultSettings);
   };
 
