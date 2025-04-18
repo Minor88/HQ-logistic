@@ -1,7 +1,7 @@
-
 import React from "react";
-import { Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +14,14 @@ import { Button } from "@/components/ui/button";
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { toggleSidebar } = useSettings();
 
   return (
-    <header className="apple-glass sticky top-0 z-30 flex h-16 items-center justify-between px-6 border-b">
-      <div className="flex items-center">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between px-6 border-b bg-white shadow-sm">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={toggleSidebar}>
+          <Menu className="h-5 w-5" />
+        </Button>
         <h1 className="text-xl font-medium text-gray-800">Apple Flow Logistics</h1>
       </div>
 

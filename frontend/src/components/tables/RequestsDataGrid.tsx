@@ -145,10 +145,10 @@ export function RequestsDataGrid({
     { 
       field: 'number', 
       headerName: 'Номер', 
-      width: 120,
+      width: 80,
       renderCell: (params: GridRenderCellParams<Request>) => (
         <div className="flex items-center">
-          <FileText className="h-4 w-4 mr-2 text-apple-purple" />
+          <FileText className="h-3 w-3 mr-1 text-apple-purple" />
           {params.value !== undefined ? params.value : '-'}
         </div>
       )
@@ -156,7 +156,7 @@ export function RequestsDataGrid({
     { 
       field: 'createdAt', 
       headerName: 'Дата создания', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Request>) => {
         if (params.value === undefined || params.value === null) return <span>Н/Д</span>;
         return <span>{formatDate(params.value as string) || 'Н/Д'}</span>;
@@ -165,7 +165,7 @@ export function RequestsDataGrid({
     { 
       field: 'warehouseNumber', 
       headerName: 'Складской №', 
-      width: 130,
+      width: 100,
       renderCell: (params: GridRenderCellParams<Request>) => {
         return <span>{params.value !== undefined && params.value !== null ? params.value : '-'}</span>;
       }
@@ -173,9 +173,9 @@ export function RequestsDataGrid({
     { 
       field: 'description', 
       headerName: 'Описание', 
-      width: 200,
+      width: 150,
       renderCell: (params: GridRenderCellParams<Request>) => (
-        <div className="max-w-[200px] truncate" title={params.value !== undefined ? params.value as string : ''}>
+        <div className="max-w-[150px] truncate" title={params.value !== undefined ? params.value as string : ''}>
           {params.value !== undefined ? params.value : '-'}
         </div>
       )
@@ -183,14 +183,13 @@ export function RequestsDataGrid({
     { 
       field: 'colMest', 
       headerName: 'Кол-во мест', 
-      width: 100,
+      width: 80,
       renderCell: (params: GridRenderCellParams<Request>) => {
         const value = params.value !== undefined && params.value !== null 
           ? typeof params.value === 'number' 
             ? params.value.toString() 
             : params.value 
-          : // Проверяем поле places для обратной совместимости
-            ((params.row as any).places !== undefined && (params.row as any).places !== null
+          : ((params.row as any).places !== undefined && (params.row as any).places !== null
               ? (params.row as any).places.toString()
               : '-');
         return <span>{value}</span>;
@@ -199,14 +198,13 @@ export function RequestsDataGrid({
     { 
       field: 'declaredWeight', 
       headerName: 'Вес (кг)', 
-      width: 100,
+      width: 80,
       renderCell: (params: GridRenderCellParams<Request>) => {
         const value = params.value !== undefined && params.value !== null 
           ? typeof params.value === 'number' 
             ? params.value.toString() 
             : params.value 
-          : // Проверяем поле weight для обратной совместимости
-            ((params.row as any).weight !== undefined && (params.row as any).weight !== null
+          : ((params.row as any).weight !== undefined && (params.row as any).weight !== null
               ? (params.row as any).weight.toString()
               : '-');
         return <span>{value}</span>;
@@ -215,14 +213,13 @@ export function RequestsDataGrid({
     { 
       field: 'declaredVolume', 
       headerName: 'Объем (м³)', 
-      width: 100,
+      width: 80,
       renderCell: (params: GridRenderCellParams<Request>) => {
         const value = params.value !== undefined && params.value !== null 
           ? typeof params.value === 'number' 
             ? params.value.toString() 
             : params.value 
-          : // Проверяем поле volume для обратной совместимости
-            ((params.row as any).volume !== undefined && (params.row as any).volume !== null
+          : ((params.row as any).volume !== undefined && (params.row as any).volume !== null
               ? (params.row as any).volume.toString()
               : '-');
         return <span>{value}</span>;
@@ -231,7 +228,7 @@ export function RequestsDataGrid({
     { 
       field: 'actualWeight', 
       headerName: 'Факт. вес (кг)', 
-      width: 120,
+      width: 90,
       renderCell: (params: GridRenderCellParams<Request>) => {
         // Проверяем значение в ячейке
         let value = '-';
@@ -249,7 +246,7 @@ export function RequestsDataGrid({
     { 
       field: 'actualVolume', 
       headerName: 'Факт. объем (м³)', 
-      width: 140,
+      width: 100,
       renderCell: (params: GridRenderCellParams<Request>) => {
         // Проверяем значение в ячейке
         let value = '-';
@@ -267,7 +264,7 @@ export function RequestsDataGrid({
     { 
       field: 'rate', 
       headerName: 'Ставка', 
-      width: 100,
+      width: 80,
       renderCell: (params: GridRenderCellParams<Request>) => {
         // Проверяем значение в ячейке
         let value = '-';
@@ -285,7 +282,7 @@ export function RequestsDataGrid({
     { 
       field: 'comment', 
       headerName: 'Комментарий', 
-      width: 200,
+      width: 150,
       renderCell: (params: GridRenderCellParams<Request>) => {
         // Проверяем значение в ячейке
         let value = '-';
@@ -301,7 +298,7 @@ export function RequestsDataGrid({
         }
         
         return (
-          <div className="max-w-[200px] truncate" title={title}>
+          <div className="max-w-[150px] truncate" title={title}>
             {value}
           </div>
         );
@@ -310,7 +307,7 @@ export function RequestsDataGrid({
     { 
       field: 'clientName', 
       headerName: 'Клиент', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Request>) => {
         return <span>{params.value !== undefined && params.value !== null ? params.value : 'Н/Д'}</span>;
       }
@@ -318,7 +315,7 @@ export function RequestsDataGrid({
     { 
       field: 'status', 
       headerName: 'Статус', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Request>) => {
         if (!params.row) return 'Неизвестный статус';
         
@@ -335,7 +332,7 @@ export function RequestsDataGrid({
     { 
       field: 'shipmentNumber', 
       headerName: 'Отправление', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Request>) => {
         if (!params.row || !params.row.shipment) return '-';
         
@@ -345,7 +342,7 @@ export function RequestsDataGrid({
               to={`/shipments?id=${params.row.shipment}`}
               className="text-apple-purple hover:underline flex items-center"
             >
-              <Truck className="h-4 w-4 mr-1" />
+              <Truck className="h-3 w-3 mr-1" />
               {params.value}
             </Link>
           ) : '-'
@@ -355,7 +352,7 @@ export function RequestsDataGrid({
     { 
       field: 'shipmentStatusDisplay', 
       headerName: 'Статус отправления', 
-      width: 170,
+      width: 130,
       renderCell: (params: GridRenderCellParams<Request>) => (
         params.value !== undefined && params.value ? (
           <Badge variant="outline">
@@ -367,9 +364,9 @@ export function RequestsDataGrid({
     { 
       field: 'shipmentComment', 
       headerName: 'Комментарий отправления', 
-      width: 200,
+      width: 150,
       renderCell: (params: GridRenderCellParams<Request>) => (
-        <div className="max-w-[200px] truncate" title={params.value !== undefined ? params.value as string : ''}>
+        <div className="max-w-[150px] truncate" title={params.value !== undefined ? params.value as string : ''}>
           {params.value !== undefined ? params.value : '-'}
         </div>
       )
@@ -377,7 +374,7 @@ export function RequestsDataGrid({
     {
       field: 'files',
       headerName: 'Файлы',
-      width: 80,
+      width: 60,
       renderCell: (params: GridRenderCellParams<Request>) => (
         <Button 
           variant="ghost" 
@@ -387,14 +384,14 @@ export function RequestsDataGrid({
             onFilesClick(params.row);
           }}
         >
-          <Folder className="h-4 w-4" />
+          <Folder className="h-3 w-3" />
         </Button>
       )
     },
     {
       field: 'actions',
       headerName: 'Действия',
-      width: 150,
+      width: 120,
       type: 'actions',
       getActions: (params: GridRowParams) => {
         if (!params.row) return [];
@@ -402,7 +399,7 @@ export function RequestsDataGrid({
         const request = params.row as Request;
         const actions = [
           <GridActionsCellItem
-            icon={<Eye className="h-4 w-4" />}
+            icon={<Eye className="h-3 w-3" />}
             label="Просмотр"
             onClick={() => onViewClick(request)}
             key="view"
@@ -412,13 +409,13 @@ export function RequestsDataGrid({
         if (canEditRequest(request)) {
           actions.push(
             <GridActionsCellItem
-              icon={<Edit2 className="h-4 w-4" />}
+              icon={<Edit2 className="h-3 w-3" />}
               label="Редактировать"
               onClick={() => onEditClick(request)}
               key="edit"
             />,
             <GridActionsCellItem
-              icon={<Trash2 className="h-4 w-4" />}
+              icon={<Trash2 className="h-3 w-3" />}
               label="Удалить"
               onClick={() => onDeleteClick(request)}
               color="error"
@@ -434,8 +431,8 @@ export function RequestsDataGrid({
 
   return (
     <div className="w-full h-[600px]">
-      <div className="mb-4 flex justify-end">
-        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white">
+      <div className="mb-2 flex justify-end">
+        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white text-xs py-1 px-3 h-8">
           Добавить заявку
         </Button>
       </div>
@@ -471,22 +468,24 @@ export function RequestsDataGrid({
             border: 'none',
             borderRadius: '0.8rem',
             fontFamily: 'sans-serif',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-main': {
             borderRadius: '0.8rem',
-            overflow: 'visible',
+            overflow: 'hidden',
           },
           '& .MuiDataGrid-cell': {
             borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-            padding: '12px 16px',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-columnHeaders': {
             backgroundColor: '#F1F0FB', // apple-soft-gray
             color: '#6E59A5', // apple-purple-dark
             fontWeight: 'bold',
-            fontSize: '0.875rem',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-row': {
             '&:nth-of-type(odd)': {

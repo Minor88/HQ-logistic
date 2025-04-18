@@ -271,7 +271,7 @@ export default function ShipmentsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Отправления</CardTitle>
@@ -659,6 +659,6 @@ export default function ShipmentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 } 

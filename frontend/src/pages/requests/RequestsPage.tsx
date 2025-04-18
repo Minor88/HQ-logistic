@@ -583,7 +583,7 @@ export default function RequestsPage() {
   }, [loadRequests, currentPage, rowsPerPage, filters, sortField, sortDirection]);
 
   return (
-    <div className="container mx-auto py-6">
+    <>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Заявки</CardTitle>
@@ -1643,6 +1643,6 @@ export default function RequestsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 } 

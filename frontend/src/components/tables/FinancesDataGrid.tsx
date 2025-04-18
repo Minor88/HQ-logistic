@@ -78,10 +78,10 @@ export function FinancesDataGrid({
     { 
       field: 'number', 
       headerName: '№', 
-      width: 80,
+      width: 60,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <div className="flex items-center">
-          <DollarSign className="h-4 w-4 mr-2 text-apple-purple" />
+          <DollarSign className="h-3 w-3 mr-1 text-apple-purple" />
           {params.value}
         </div>
       )
@@ -89,7 +89,7 @@ export function FinancesDataGrid({
     { 
       field: 'operationTypeDisplay', 
       headerName: 'Тип операции', 
-      width: 130,
+      width: 100,
       renderCell: (params: GridRenderCellParams) => (
         <Badge variant={params.row.operationType === 'in' ? 'default' : 'destructive'}>
           {params.value || (params.row.operationType === 'in' ? 'Входящий' : 'Исходящий')}
@@ -99,7 +99,7 @@ export function FinancesDataGrid({
     { 
       field: 'paymentDate', 
       headerName: 'Дата оплаты', 
-      width: 130,
+      width: 100,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{formatDate(params.value as string) || 'Н/Д'}</span>
       )
@@ -107,7 +107,7 @@ export function FinancesDataGrid({
     { 
       field: 'documentTypeDisplay', 
       headerName: 'Тип документа', 
-      width: 130,
+      width: 100,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? params.value : '-'}</span>
       )
@@ -115,7 +115,7 @@ export function FinancesDataGrid({
     { 
       field: 'currencyDisplay', 
       headerName: 'Валюта', 
-      width: 100,
+      width: 70,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? params.value : '-'}</span>
       )
@@ -123,7 +123,7 @@ export function FinancesDataGrid({
     { 
       field: 'amount', 
       headerName: 'Сумма', 
-      width: 120,
+      width: 90,
       type: 'number',
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? `${Number(params.value).toFixed(2)}` : '-'}</span>
@@ -132,7 +132,7 @@ export function FinancesDataGrid({
     { 
       field: 'counterpartyName', 
       headerName: 'Контрагент', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? params.value : 'Не указан'}</span>
       )
@@ -140,7 +140,7 @@ export function FinancesDataGrid({
     { 
       field: 'articleName', 
       headerName: 'Статья', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? params.value : 'Не указана'}</span>
       )
@@ -148,7 +148,7 @@ export function FinancesDataGrid({
     { 
       field: 'isPaid', 
       headerName: 'Оплачено', 
-      width: 100,
+      width: 80,
       type: 'boolean',
       renderCell: (params: GridRenderCellParams) => (
         params.value ? 
@@ -159,14 +159,14 @@ export function FinancesDataGrid({
     { 
       field: 'shipmentNumber', 
       headerName: 'Отправление', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         params.value ? (
           <Link 
             to={`/shipments?id=${params.row.shipment}`}
             className="text-apple-purple hover:underline flex items-center"
           >
-            <Truck className="h-4 w-4 mr-1" />
+            <Truck className="h-3 w-3 mr-1" />
             {params.value}
           </Link>
         ) : '-'
@@ -175,14 +175,14 @@ export function FinancesDataGrid({
     { 
       field: 'requestNumber', 
       headerName: 'Заявка', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         params.value ? (
           <Link 
             to={`/requests?id=${params.row.request}`}
             className="text-apple-purple hover:underline flex items-center"
           >
-            <FileText className="h-4 w-4 mr-1" />
+            <FileText className="h-3 w-3 mr-1" />
             {params.value}
           </Link>
         ) : '-'
@@ -191,9 +191,9 @@ export function FinancesDataGrid({
     { 
       field: 'comment', 
       headerName: 'Комментарий', 
-      width: 200,
+      width: 150,
       renderCell: (params: GridRenderCellParams) => (
-        <div className="max-w-[200px] truncate" title={params.value as string || ''}>
+        <div className="max-w-[150px] truncate" title={params.value as string || ''}>
           {params.value || '-'}
         </div>
       )
@@ -201,7 +201,7 @@ export function FinancesDataGrid({
     { 
       field: 'createdAt', 
       headerName: 'Дата создания', 
-      width: 130,
+      width: 100,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{formatDate(params.value as string) || 'Н/Д'}</span>
       )
@@ -209,7 +209,7 @@ export function FinancesDataGrid({
     { 
       field: 'createdByName', 
       headerName: 'Создал', 
-      width: 150,
+      width: 120,
       renderCell: (params: GridRenderCellParams<Finance>) => (
         <span>{params.value !== undefined && params.value !== null ? params.value : 'Н/Д'}</span>
       )
@@ -217,13 +217,13 @@ export function FinancesDataGrid({
     {
       field: 'actions',
       headerName: 'Действия',
-      width: 150,
+      width: 120,
       type: 'actions',
       getActions: (params: GridRowParams) => {
         const finance = params.row as Finance;
         const actions = [
           <GridActionsCellItem
-            icon={<Eye className="h-4 w-4" />}
+            icon={<Eye className="h-3 w-3" />}
             label="Просмотр"
             onClick={() => onViewClick(finance)}
           />
@@ -232,12 +232,12 @@ export function FinancesDataGrid({
         if (canEditFinance(finance)) {
           actions.push(
             <GridActionsCellItem
-              icon={<Edit2 className="h-4 w-4" />}
+              icon={<Edit2 className="h-3 w-3" />}
               label="Редактировать"
               onClick={() => onEditClick(finance)}
             />,
             <GridActionsCellItem
-              icon={<Trash2 className="h-4 w-4" />}
+              icon={<Trash2 className="h-3 w-3" />}
               label="Удалить"
               onClick={() => onDeleteClick(finance)}
               color="error"
@@ -252,8 +252,8 @@ export function FinancesDataGrid({
 
   return (
     <div className="w-full h-[600px]">
-      <div className="mb-4 flex justify-end">
-        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white">
+      <div className="mb-2 flex justify-end">
+        <Button onClick={onAddClick} className="bg-apple-purple hover:bg-apple-purple-dark text-white text-xs py-1 px-3 h-8">
           Добавить финансовую операцию
         </Button>
       </div>
@@ -284,22 +284,24 @@ export function FinancesDataGrid({
             border: 'none',
             borderRadius: '0.8rem',
             fontFamily: 'sans-serif',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-main': {
             borderRadius: '0.8rem',
-            overflow: 'visible',
+            overflow: 'hidden',
           },
           '& .MuiDataGrid-cell': {
             borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-            padding: '12px 16px',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-columnHeaders': {
             backgroundColor: '#F1F0FB', // apple-soft-gray
             color: '#6E59A5', // apple-purple-dark
             fontWeight: 'bold',
-            fontSize: '0.875rem',
+            fontSize: '0.7rem',
           },
           '& .MuiDataGrid-row': {
             '&:nth-of-type(odd)': {
